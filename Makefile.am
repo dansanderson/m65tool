@@ -19,19 +19,19 @@ export CMOCK_DIR = $(top_srcdir)/third-party/CMock
 
 tests/examplemod/examplemod_test_Runner.c:
 	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
-	$(RUBY) $(top_srcdir)/third-party/Unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
+	$(RUBY) $(UNITY_DIR)/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
 
 CLEANFILES = tests/examplemod/examplemod_test_Runner.c
 
 check_PROGRAMS = tests/examplemod/examplemod_test_Runner
 TESTS = $(check_PROGRAMS)
 
-tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c third-party/Unity/src/unity.c third-party/Unity/src/unity.h third-party/Unity/src/unity_internals.h third-party/Unity/auto/generate_test_runner.rb
+tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c $(UNITY_DIR)/src/unity.c $(UNITY_DIR)/src/unity.h $(UNITY_DIR)/src/unity_internals.h $(UNITY_DIR)/auto/generate_test_runner.rb
 tests_examplemod_examplemod_test_Runner_LDADD = src/examplemod/libexamplemod.a
 tests_examplemod_examplemod_test_Runner_LDFLAGS = -pthread
-tests_examplemod_examplemod_test_Runner_CPPFLAGS = -I$(top_srcdir)/third-party/Unity/src -I$(top_srcdir)/src/examplemod
+tests_examplemod_examplemod_test_Runner_CPPFLAGS = -I$(UNITY_DIR)/src -I$(top_srcdir)/src/examplemod
 
 
 ## Non-source dist
 
-EXTRA_DIST = docs/testdoc.md third-party/CMock/LICENSE.txt third-party/Unity/LICENSE.txt
+EXTRA_DIST = docs/developing.md third-party/CMock/LICENSE.txt
