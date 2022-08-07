@@ -14,6 +14,9 @@ src_m65tool_m65tool_CPPFLAGS = -I$(top_srcdir)/src/examplemod
 
 ## Tests
 
+export UNITY_DIR = $(top_srcdir)/third-party/CMock/vendor/unity
+export CMOCK_DIR = $(top_srcdir)/third-party/CMock
+
 tests/examplemod/examplemod_test_Runner.c:
 	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	$(RUBY) $(top_srcdir)/third-party/Unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
