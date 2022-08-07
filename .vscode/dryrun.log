@@ -1,0 +1,253 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/dan/Projects/m65tool'
+ 
+CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing aclocal-1.16 
+ 
+ cd . && /bin/sh /Users/dan/Projects/m65tool/missing automake-1.16 --foreign
+ 
+CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing autoconf
+ 
+/bin/sh ./config.status --recheck
+ 
+running CONFIG_SHELL=/bin/sh /bin/sh ./configure LDFLAGS=-L/usr/local/opt/ruby/lib CPPFLAGS=-I/usr/local/opt/ruby/include --no-create --no-recursion
+ 
+checking for a BSD-compatible install...  
+/usr/bin/install -c
+ 
+checking whether build environment is sane...  
+yes
+ 
+checking for a thread-safe mkdir -p...  
+./install-sh -c -d
+ 
+checking for gawk...  
+no
+ 
+checking for mawk...  
+no
+ 
+checking for nawk...  
+no
+ 
+checking for awk...  
+awk
+ 
+checking whether make sets $(MAKE)...  
+yes
+ 
+checking whether make supports nested variables...  
+yes
+ 
+checking for gcc...  
+gcc
+ 
+checking whether the C compiler works...  
+yes
+ 
+checking for C compiler default output file name... a.out
+ 
+checking for suffix of executables...  
+
+ 
+checking whether we are cross compiling...  
+no
+ 
+checking for suffix of object files...  
+o
+ 
+checking whether we are using the GNU C compiler...  
+yes
+checking whether gcc accepts -g...  
+yes
+ 
+checking for gcc option to accept ISO C89...  
+none needed
+ 
+checking whether gcc understands -c and -o together...  
+yes
+ 
+checking whether make supports the include directive...  
+yes (GNU style)
+ 
+checking dependency style of gcc...  
+gcc3
+ 
+checking for ranlib...  
+ranlib
+ 
+checking for ar...  
+ar
+ 
+checking the archiver (ar) interface...  
+ar
+ 
+checking for ruby...  
+/usr/local/opt/ruby/bin/ruby
+ 
+checking that generated files are newer than configure...  
+done
+ 
+configure: creating ./config.status
+ 
+ /bin/sh ./config.status
+ 
+config.status: creating Makefile
+ 
+config.status: creating config.h
+ 
+config.status: config.h is unchanged
+ 
+config.status: executing depfiles commands
+ 
+make: Leaving directory `/Users/dan/Projects/m65tool'
+ 
+make: Entering directory `/Users/dan/Projects/m65tool'
+(CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing autoheader)
+rm -f stamp-h1
+touch config.h.in
+rm -f stamp-h1
+cd . && /bin/sh ./config.status config.h
+ 
+test -f config.h || rm -f stamp-h1
+test -f config.h || /Library/Developer/CommandLineTools/usr/bin/make  stamp-h1
+ 
+/Library/Developer/CommandLineTools/usr/bin/make  all-am
+ 
+make[1]: Entering directory `/Users/dan/Projects/m65tool'
+ 
+CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing aclocal-1.16 
+ 
+ cd . && /bin/sh /Users/dan/Projects/m65tool/missing automake-1.16 --foreign Makefile
+ 
+CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing autoconf
+ 
+/bin/sh ./config.status --recheck
+ 
+running CONFIG_SHELL=/bin/sh /bin/sh ./configure LDFLAGS=-L/usr/local/opt/ruby/lib CPPFLAGS=-I/usr/local/opt/ruby/include --no-create --no-recursion
+ 
+checking for a BSD-compatible install...  
+/usr/bin/install -c
+ 
+checking whether build environment is sane...  
+yes
+ 
+checking for a thread-safe mkdir -p...  
+./install-sh -c -d
+ 
+checking for gawk...  
+no
+checking for mawk...  
+no
+ 
+checking for nawk...  
+no
+ 
+checking for awk...  
+awk
+ 
+checking whether make sets $(MAKE)...  
+yes
+ 
+checking whether make supports nested variables...  
+yes
+ 
+checking for gcc...  
+gcc
+ 
+checking whether the C compiler works...  
+yes
+ 
+checking for C compiler default output file name... a.out
+ 
+checking for suffix of executables...  
+
+ 
+checking whether we are cross compiling...  
+no
+ 
+checking for suffix of object files...  
+o
+ 
+checking whether we are using the GNU C compiler...  
+yes
+ 
+checking whether gcc accepts -g...  
+yes
+ 
+checking for gcc option to accept ISO C89...  
+none needed
+ 
+checking whether gcc understands -c and -o together...  
+yes
+ 
+checking whether make supports the include directive...  
+yes (GNU style)
+ 
+checking dependency style of gcc...  
+gcc3
+ 
+checking for ranlib...  
+ranlib
+ 
+checking for ar...  
+ar
+ 
+checking the archiver (ar) interface...  
+ar
+ 
+checking for ruby...  
+/usr/local/opt/ruby/bin/ruby
+ 
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+ /bin/sh ./config.status
+ 
+config.status: creating Makefile
+ 
+config.status: creating config.h
+ 
+config.status: config.h is unchanged
+ 
+config.status: executing depfiles commands
+ 
+make[1]: Leaving directory `/Users/dan/Projects/m65tool'
+ 
+make[1]: Entering directory `/Users/dan/Projects/m65tool'
+./install-sh -c -d src/m65tool
+ 
+: > src/m65tool/.dirstamp
+./install-sh -c -d src/m65tool/.deps
+: > src/m65tool/.deps/.dirstamp
+gcc -DHAVE_CONFIG_H -I.  -I./src/examplemod -I/usr/local/opt/ruby/include  -g -O2 -std=c17 -MT src/m65tool/m65tool-m65tool.o -MD -MP -MF src/m65tool/.deps/m65tool-m65tool.Tpo -c -o src/m65tool/m65tool-m65tool.o `test -f 'src/m65tool/m65tool.c' || echo './'`src/m65tool/m65tool.c
+mv -f src/m65tool/.deps/m65tool-m65tool.Tpo src/m65tool/.deps/m65tool-m65tool.Po
+ 
+./install-sh -c -d src/examplemod
+: > src/examplemod/.dirstamp
+ 
+./install-sh -c -d src/examplemod/.deps
+: > src/examplemod/.deps/.dirstamp
+depbase=`echo src/examplemod/examplemod.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+	gcc -DHAVE_CONFIG_H -I.   -I/usr/local/opt/ruby/include  -g -O2 -std=c17 -MT src/examplemod/examplemod.o -MD -MP -MF $depbase.Tpo -c -o src/examplemod/examplemod.o src/examplemod/examplemod.c &&\
+	mv -f $depbase.Tpo $depbase.Po
+ 
+depbase=`echo src/examplemod/priv1.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+	gcc -DHAVE_CONFIG_H -I.   -I/usr/local/opt/ruby/include  -g -O2 -std=c17 -MT src/examplemod/priv1.o -MD -MP -MF $depbase.Tpo -c -o src/examplemod/priv1.o src/examplemod/priv1.c &&\
+	mv -f $depbase.Tpo $depbase.Po
+rm -f src/examplemod/libexamplemod.a
+ar cru src/examplemod/libexamplemod.a src/examplemod/examplemod.o src/examplemod/priv1.o 
+ranlib src/examplemod/libexamplemod.a
+ 
+rm -f src/m65tool/m65tool
+gcc  -g -O2 -std=c17  -L/usr/local/opt/ruby/lib -o src/m65tool/m65tool src/m65tool/m65tool-m65tool.o src/examplemod/libexamplemod.a 
+(CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/sh /Users/dan/Projects/m65tool/missing autoheader)
+rm -f stamp-h1
+touch config.h.in
+rm -f stamp-h1
+cd . && /bin/sh ./config.status config.h
+test -f config.h || rm -f stamp-h1
+test -f config.h || /Library/Developer/CommandLineTools/usr/bin/make  stamp-h1
+ 
+make[1]: Leaving directory `/Users/dan/Projects/m65tool'
+ 
+make: Leaving directory `/Users/dan/Projects/m65tool'
+ 

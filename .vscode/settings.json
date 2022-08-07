@@ -3,5 +3,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.tabSize": 2,
-  "C_Cpp.default.includePath": ["src/examplemod", "third-party/Unity/src"]
+  "C_Cpp.default.includePath": ["src/examplemod", "third-party/Unity/src"],
+  "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+  "cmake.configureOnOpen": true
 }

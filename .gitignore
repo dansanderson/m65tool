@@ -10,6 +10,7 @@ test-suite.log
 libtool
 config.h
 m65tool-0.1.tar.gz
+mocks
 
 # Backup files (sometimes by autoreconf)
 *~

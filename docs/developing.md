@@ -39,13 +39,13 @@ Line Tools, which provides a gcc-compatible C compiler and GNU Automake. Once
 installed, run the following command to install the remaining tools:
 
 ```text
-brew install ruby git gh
+brew install ruby git
 ```
 
-Clone the `m65tool` Github repo:
+Clone the `m65tool` Github repo, with submodules:
 
 ```text
-gh repo clone dansanderson/m65tool
+git clone https://github.com/dansanderson/m65tool --recurse-submodules
 ```
 
 Run Automake's `autoreconf` to generate the initial set of build files, then
@@ -189,8 +189,8 @@ Unity Test.
 
 ```makefile
 tests/examplemod/examplemod_test_Runner.c:
-	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
-	$(RUBY) $(top_srcdir)/third-party/Unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
+  test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+  $(RUBY) $(top_srcdir)/third-party/Unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
 
 tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c third-party/Unity/src/unity.c third-party/Unity/src/unity.h third-party/Unity/src/unity_internals.h third-party/Unity/auto/generate_test_runner.rb
 tests_examplemod_examplemod_test_Runner_LDADD = src/examplemod/libexamplemod.a
