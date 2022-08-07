@@ -14,22 +14,19 @@ src_m65tool_m65tool_CPPFLAGS = -I$(top_srcdir)/src/examplemod
 
 ## Tests
 
-export UNITY_DIR = $(top_srcdir)/third-party/CMock/vendor/unity
-export CMOCK_DIR = $(top_srcdir)/third-party/CMock
-
 tests/examplemod/examplemod_test_Runner.c:
 	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
-	$(RUBY) $(UNITY_DIR)/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
+	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
 
 CLEANFILES = tests/examplemod/examplemod_test_Runner.c
 
 check_PROGRAMS = tests/examplemod/examplemod_test_Runner
 TESTS = $(check_PROGRAMS)
 
-tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c $(UNITY_DIR)/src/unity.c $(UNITY_DIR)/src/unity.h $(UNITY_DIR)/src/unity_internals.h $(UNITY_DIR)/auto/generate_test_runner.rb
+tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c third-party/CMock/vendor/unity/src/unity.c third-party/CMock/vendor/unity/src/unity.h third-party/CMock/vendor/unity/src/unity_internals.h third-party/CMock/vendor/unity/auto/generate_test_runner.rb
 tests_examplemod_examplemod_test_Runner_LDADD = src/examplemod/libexamplemod.a
 tests_examplemod_examplemod_test_Runner_LDFLAGS = -pthread
-tests_examplemod_examplemod_test_Runner_CPPFLAGS = -I$(UNITY_DIR)/src -I$(top_srcdir)/src/examplemod
+tests_examplemod_examplemod_test_Runner_CPPFLAGS = -I$(top_srcdir)/third-party/CMock/vendor/unity/src -I$(top_srcdir)/src/examplemod
 
 
 ## Non-source dist
