@@ -6,6 +6,8 @@ AC_PROG_RANLIB
 AM_PROG_AR
 AC_PATH_PROG([RUBY], [ruby])
 
+CFLAGS="$CFLAGS -std=c17"
+
 AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_FILES([Makefile])

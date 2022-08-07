@@ -2,5 +2,6 @@
   "editor.formatOnType": true,
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "C_Cpp.default.includePath": ["src/examplemod", "third-party/Unity/src"]
 }
