@@ -10,6 +10,12 @@ CFLAGS="$CFLAGS -std=c17"
 
 AC_CONFIG_HEADERS([config.h])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES(
+  [Makefile]
+  [src/Makefile]
+  [src/examplemod/Makefile]
+  [src/m65tool/Makefile]
+  [tests/Makefile]
+  [tests/examplemod/Makefile])
 
 AC_OUTPUT

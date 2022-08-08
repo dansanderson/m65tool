@@ -1,5 +1,6 @@
-# The built tool binary
-src/m65tool/m65tool
+# Built binaries
+/src/m65tool/m65tool
+/tests/examplemod/test_examplemod
 
 # Generated files
 test-suite.log
@@ -7,6 +8,12 @@ libtool
 config.h
 m65tool-0.1.tar.gz
 /build
+test_*.log
+test_*.trs
+/tests/*/runners
+
+# VSCode
+.vscode/*.log
 
 # Backup files (sometimes by autoreconf)
 *~
