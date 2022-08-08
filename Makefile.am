@@ -62,6 +62,7 @@ SUBDIRS = src tests
 ## Non-source dist
 
 EXTRA_DIST = \
+  README.md \
 	docs/developing.md \
 	third-party/CMock/LICENSE.txt \
   third-party/CMock/scripts/test_summary.rb \
