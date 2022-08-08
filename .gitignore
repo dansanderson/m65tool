@@ -18,6 +18,9 @@ test_*.trs
 # Backup files (sometimes by autoreconf)
 *~
 
+## Python
+.mypy_cache
+
 ## C
 
 # Prerequisites
