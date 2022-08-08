@@ -1,7 +1,7 @@
 #include <config.h>
 #include <stdio.h>
 
-#include "examplemod.h"
+#include "examplemod/examplemod.h"
 
 int main(void) {
   puts("Hello world!\n");

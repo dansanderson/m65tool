@@ -1,7 +1,6 @@
-#include "examplemod.h"
-
 #include <stdio.h>
 
+#include "examplemod/examplemod.h"
 #include "unity.h"
 
 void setUp(void) {}
