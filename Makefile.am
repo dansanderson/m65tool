@@ -33,7 +33,11 @@ build_test_test_examplemod_SOURCES = \
 	build/test/runners/runner_test_examplemod.c \
 	tests/examplemod/test_examplemod.c \
 	third-party/CMock/src/cmock.c \
+	third-party/CMock/src/cmock.h \
+	third-party/CMock/src/cmock_internals.h \
 	third-party/CMock/vendor/unity/src/unity.c \
+	third-party/CMock/vendor/unity/src/unity.h \
+	third-party/CMock/vendor/unity/src/unity_internals.h \
 	src/examplemod/examplemod.h
 build_test_test_examplemod_LDADD = build/modules/libexamplemod.a
 build_test_test_examplemod_LDFLAGS = -pthread

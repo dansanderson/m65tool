@@ -2,15 +2,11 @@
 src/m65tool/m65tool
 
 # Generated files
-*_Runner
-*_Runner.c
-*_Runner.log
-*_Runner.trs
 test-suite.log
 libtool
 config.h
 m65tool-0.1.tar.gz
-build
+/build
 
 # Backup files (sometimes by autoreconf)
 *~
