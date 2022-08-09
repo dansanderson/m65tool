@@ -71,7 +71,9 @@ installed.
 ## How do I install it?
 
 During early development, m65tool is only available via [the m65tool Github
-repo](https://github.com/dansanderson/m65tool).
+repo](https://github.com/dansanderson/m65tool). When the tool is ready to use,
+it will be available via application and source distributions for all
+platforms.
 
 Windows users will be supported by a [MinGW](https://www.mingw-w64.org/)-based
 build workflow, similar to mega65-tools. You're welcome to try getting the
@@ -85,9 +87,13 @@ Linux and Mac users, make sure you have the following support tools installed:
 - [Ruby](https://www.ruby-lang.org/en/) 2.x or later, for unit test code
   generation
 
-Linux users likely already have these installed. Check your OS's software
-packaging system for details. If you have the `autoreconf` and `ruby` commands,
-you're probably good.
+Linux can usually get these via `apt-get`. Check your OS's software packaging
+system for details. On Ubuntu:
+
+```text
+sudo apt-get update
+sudo apt-get install build-essential autoconf ruby-full git
+```
 
 Mac users are strongly recommended to install [Homebrew](https://brew.sh/) to
 manage tool installation. Installing Homebrew also installs the XCode Command
@@ -100,17 +106,23 @@ brew install ruby git
 
 ### Building m65tool from the Github repo
 
-Clone the `m65tool` Github repo, with submodules:
+Clone the `m65tool` Github repo, with submodules (recursively):
 
 ```text
 git clone https://github.com/dansanderson/m65tool --recurse-submodules
+cd m65tool
+```
+
+If you cloned the repo some other way, you can get the submodules with:
+
+```text
+git submodule update --init --recursive
 ```
 
 Run Automake's `autoreconf` to generate the initial set of build files,
 run the `./configure` script that it produces, then run `make`:
 
 ```text
-cd m65tool
 autoreconf --install
 ./configure
 make
@@ -130,48 +142,6 @@ The `m65tool` binary is built to `src/m65tool/m65tool`. If you really want to,
 you can `make install` to copy this tool to your system's install location. To
 change the install location, provide a `--prefix=/path/to/root` argument to
 `./configure`. I don't recommend this until the tool is closer to completed.
-
-### Building the source distribution
-
-The build system is powered by GNU Autotools, a common way to develop portable
-applications in the C language. It is especially good at producing a "source"
-distribution, a cleaned-up version of the project repo that can be built and
-installed using a standard sequence of commands. To produce the source
-distribution file (`m65tool-0.1.tar.gz`):
-
-```text
-make distcheck
-```
-
-To install from the source distribution (and not the project repo):
-
-```text
-tar xzf m65tool-0.1.tar.gz
-cd m65tool-0.1
-./configure
-make
-make install
-```
-
-### Cleaning up the generated files
-
-The build process generates quite a few intermediate files strewn throughout
-the project directory. GNU Autotools keeps track of all of them, and most can
-be cleaned up with `make clean`, `make distclean`, or `make maintainer-clean`.
-
-By design, these `make` commands don't clean up every generated file. I have
-included a Python utility, `superclean.py`, that deletes every file explicitly
-ignored by git, and deletes every empty directory. You don't normally need to
-do this: the `.gitignore` file will prevent these files from being committed to
-the repo, and GNU Autotools will usually regenerate files as needed.
-
-```text
-# Display the files that would be deleted, but don't delete them.
-python3 superclean.py --dry-run
-
-# Delete all git-ignored files and empty directories.
-python3 superclean.py
-```
 
 ## Can I contribute?
 

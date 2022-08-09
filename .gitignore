@@ -21,6 +21,7 @@ test_*.trs
 
 ## Python
 .mypy_cache
+__pycache__
 
 ## C
 
