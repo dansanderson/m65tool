@@ -6,12 +6,20 @@ README.md.
 
 ## Prerequisites
 
-Make sure you have the following tools installed:
+Make sure you have the following support tools installed:
 
 - A [gcc](https://gcc.gnu.org/)-compatible C compiler
 - [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
 - [Ruby](https://www.ruby-lang.org/en/) 2.x or later, for unit test code
   generation
+
+Linux can usually get these via `apt-get`. Check your OS's software packaging
+system for details. On Ubuntu:
+
+```text
+sudo apt-get update
+sudo apt-get install build-essential autoconf ruby-full git
+```
 
 Mac users are strongly recommended to install [Homebrew](https://brew.sh/) to
 manage tool installation. Installing Homebrew also installs the XCode Command
@@ -566,12 +574,3 @@ Other C best practices:
 
 - Use `stdbool.h` for `bool`, `true`, and `false`. Use `NULL` from `stdlib.h`
   (or `stdio.h` or `stddef.h`).
-
-## TODO
-
-- Test and document debugger integration with VSCode.
-- Test and document Valgrind usage.
-- Implement `make format`.
-- Test dist on Linux.
-- Test and document building _for_ Windows, and (separately) _on_ Windows.
-- Fix `make check` in a subdir build tree?

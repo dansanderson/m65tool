@@ -80,68 +80,8 @@ build workflow, similar to mega65-tools. You're welcome to try getting the
 Linux instructions to work via Cygwin, but this isn't set up or tested for
 Windows yet.
 
-Linux and Mac users, make sure you have the following support tools installed:
-
-- A [gcc](https://gcc.gnu.org/)-compatible C compiler
-- [GNU Automake](https://www.gnu.org/software/automake/manual/html_node/index.html)
-- [Ruby](https://www.ruby-lang.org/en/) 2.x or later, for unit test code
-  generation
-
-Linux can usually get these via `apt-get`. Check your OS's software packaging
-system for details. On Ubuntu:
-
-```text
-sudo apt-get update
-sudo apt-get install build-essential autoconf ruby-full git
-```
-
-Mac users are strongly recommended to install [Homebrew](https://brew.sh/) to
-manage tool installation. Installing Homebrew also installs the XCode Command
-Line Tools, which provides a gcc-compatible C compiler and GNU Automake. Once
-installed, run the following command to install the remaining tools:
-
-```text
-brew install ruby git
-```
-
-### Building m65tool from the Github repo
-
-Clone the `m65tool` Github repo, with submodules (recursively):
-
-```text
-git clone https://github.com/dansanderson/m65tool --recurse-submodules
-cd m65tool
-```
-
-If you cloned the repo some other way, you can get the submodules with:
-
-```text
-git submodule update --init --recursive
-```
-
-Run Automake's `autoreconf` to generate the initial set of build files,
-run the `./configure` script that it produces, then run `make`:
-
-```text
-autoreconf --install
-./configure
-make
-```
-
-Changes to `configure.ac` or `Makefile.am` will regenerate the appropriate
-files during the next `make`. If for some reason this doesn't work, you can
-re-run `autoreconf` as needed.
-
-To run unit tests:
-
-```text
-make check
-```
-
-The `m65tool` binary is built to `src/m65tool/m65tool`. If you really want to,
-you can `make install` to copy this tool to your system's install location. To
-change the install location, provide a `--prefix=/path/to/root` argument to
-`./configure`. I don't recommend this until the tool is closer to completed.
+See `docs/developing.md` for instructions on building m65tool from the Github
+repo.
 
 ## Can I contribute?
 
