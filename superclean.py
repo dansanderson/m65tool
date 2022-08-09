@@ -36,7 +36,7 @@ def error(msg):
     Args:
         msg: The message to print.
     """
-    print(msg)
+    sys.stderr.write(msg + '\n')
     sys.exit(1)
 
 
@@ -168,6 +168,10 @@ def main(args):
         action='store_true',
         help='Do not delete anything, only report what would be deleted')
     parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Print all files and directories being deleted')
+    parser.add_argument(
         '--root-dir',
         help='The project root directory; by default, uses current working '
         'directory')
@@ -182,23 +186,36 @@ def main(args):
     files_to_delete, err = get_untracked_files(root_dir=args.root_dir)
     if err:
         error(f'git ls-files returned an error code ({err}), aborting')
-
-    for fpath in files_to_delete:
-        if args.dry_run:
-            print(f'Would delete file {fpath}')
-        else:
-            print(f'Deleting file {fpath}')
-            os.remove(fpath)
-
     dirs_to_delete = get_empty_directories(
         root_dir=args.root_dir,
         assume_deleted=files_to_delete)
+
+    if args.dry_run:
+        print(
+            '\nThe following files and directories would be deleted if the\n'
+            '--dry-run option were not specified:\n')
+
+    for fpath in files_to_delete:
+        if args.dry_run or args.verbose:
+            print(fpath)
+        if not args.dry_run:
+            os.remove(fpath)
+
     for dpath in dirs_to_delete:
-        if args.dry_run:
-            print(f'Would delete empty directory {dpath}')
-        else:
-            print(f'Deleting empty directory {dpath}')
+        if args.dry_run or args.verbose:
+            print(dpath)
+        if not args.dry_run:
             os.rmdir(dpath)
+
+    if args.dry_run:
+        print(
+            f'\nFiles to delete: {len(files_to_delete)}\n'
+            f'Directories to delete: {len(dirs_to_delete)}\n\n'
+            'To actually delete these files, omit the --dry-run option.\n')
+    elif args.verbose:
+        sys.stderr.write(
+            f'\nFiles deleted: {len(files_to_delete)}\n'
+            f'Directories deleted: {len(dirs_to_delete)}\n\n')
 
 
 if __name__ == '__main__':
