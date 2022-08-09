@@ -2,7 +2,7 @@ check_PROGRAMS = test_examplemod
 include ../test_common.mk
 
 test_examplemod_SOURCES = \
-	runners/runner_test_examplemod.c \
+	./runners/runner_test_examplemod.c \
 	test_examplemod.c \
 	../../src/examplemod/examplemod.h \
 	../../src/exampletwo/mocks/mock_exampletwo.h \

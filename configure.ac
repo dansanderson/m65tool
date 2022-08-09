@@ -8,6 +8,9 @@ AC_PATH_PROG([RUBY], [ruby])
 
 CFLAGS="$CFLAGS -std=c17"
 
+# https://www.gnu.org/software/automake/manual/html_node/Automake-Silent-Rules.html
+# AM_SILENT_RULES([yes])
+
 AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_FILES(

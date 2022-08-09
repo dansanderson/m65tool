@@ -1,26 +1,10 @@
 # Developing m65tool
 
-TODO:
+These are instructions for developing m65tool. If you just want to build
+m65tool from source for yourself, you can download the source distribution. See
+README.md.
 
-- How to keep internal cross-file (non-static) methods private? Are these
-  exposed in the `.a`? Should they use an `_examplemod_` prefix?
-
-- Macro-ize as much of the Makefile logic as possible! Way too much
-  boilerplate, especially for tests!
-
-- Test and document CMock.
-
-- Test and document debugger integration with VSCode.
-
-- Test and document Valgrind usage.
-
-- `make format`
-
-- Test dist on Linux.
-
-- Instructions for building for Windows.
-
-## Getting Started
+## Prerequisites
 
 Make sure you have the following tools installed:
 
@@ -38,6 +22,8 @@ installed, run the following command to install the remaining tools:
 brew install ruby git
 ```
 
+## Checking out and building from the repo
+
 Clone the `m65tool` Github repo, with submodules:
 
 ```text
@@ -53,229 +39,413 @@ autoreconf --install
 ./configure
 ```
 
-Finally, use `make` to build the tool for the first time:
+Use `make` to build the tool. The `m65tool` binary appears in the
+`./src/m65tool` directory.
 
 ```text
 make
 ```
 
-Changes to `configure.ac` or `Makefile.am` will regenerate the appropriate
-files during the next `make`. If for some reason this doesn't work, you can
-re-run `autoreconf` as needed.
+Use `make check` to build and run all unit tests and report a failure summary.
+This builds a standalone binary for each module, such as `./tests/
+
+```text
+make check
+```
+
+Use `make distcheck` to run all tests and produce the source distribution.
+
+```text
+make distcheck
+```
+
+It is usually sufficient to run just `make` and `make check` during
+development. If you make changes to `configure.ac` or `Makefile.am`, running
+`make` _may or may not_ regenerate the appropriate files. If it seems like a
+change to a `Makefile.am` is not having an effect, re-run
+`autoreconf --install` and `./configure`.
+
+### Wrangling the intermediate files
+
+You probably noticed that `autoreconf`, `./configure`, `make`, and `make check`
+produce dozens of intermediate files strewn about all of the source
+directories. It is usually safe to ignore them. Git does: all intermediate
+files are mentioned in `.gitignore`, so they don't appear as changed and won't
+be committed to the repo.
+
+There are several cleaning targets included by Autotools:
+
+- `make clean` deletes build artifacts, just enough to inspire a subsequent
+  `make` to re-build most things.
+
+- `make distclean` also deletes some output by `./configure`. You must re-run
+  `./configure` before you can `make` again.
+
+- `make maintainer-clean` deletes a few more intermediate files. By design, it
+  leaves enough files for `./configure && make` to succeed.
+
+I found it was important to fully restore the project directory to its Git repo
+state to reset artifacts from erroneous Makefile rules. To make this easier, I
+have a script, `superclean.py`, in the root directory that deletes all files
+explicitly ignored by Git, and deletes empty directories. You must re-run
+`autoreconf --install && ./configure && make` to build again.
+
+```text
+python3 superclean.py --dry-run
+
+python3 superclean.py
+autoreconf --install
+./configure
+make
+```
+
+### Building to a different directory
+
+This behavior of creating build files in the source tree is the default for GNU
+Autotools when run from the project root directory. In theory, you can generate
+the build tree in another directory, like so:
+
+```text
+mkdir build
+cd build
+../configure
+make
+```
+
+As of this writing, I have a bug in my test Makefile logic that prevents tests
+from running this way. It's probably fixable: it's an easy mistake to refer to
+a source path when you mean to refer to a build path. I wasn't motivated to fix
+it because a few files still get generated in the source tree regardless.
+
+### Quieter builds
+
+The build produces a lot of console output. This is the default for GNU
+Autotools, and I have left it this way for now for troubleshooting.
+
+To tell it to produce less build output, give `--enable-silent-rules` to
+`./configure`:
+
+```text
+./configure --enable-silent-rules
+```
+
+You can silence `make` further with `--no-print-directory`:
+
+```text
+make --no-print-directory
+```
+
+I have not yet set up [silent
+rules](https://www.gnu.org/software/automake/manual/html_node/Automake-Silent-Rules.html)
+for things like test code generators.
+
+To make `--enable-silent-rules` the default in `configure.ac`, uncomment this
+line:
+
+```text
+AM_SILENT_RULES([yes])
+```
 
 ## Modules
 
-Source code is organized into modules. Each module is a subdirectory of `src/`
-named after the module. (The `main()` for `m65tool` is in the `m65tool` module.)
+The source code of m65tool is organized into _modules._ Each module gets a
+directory under `src/`, a directory under `tests/`, a header of exported
+functions and globals, a "convenience library" (`.a`) build target, and a test
+mock library build target.
+
+Each subdirectory gets a Makefile. An effort was made to minimize module
+boilerplate. Inevitably there are several places that need to change when
+creating a new module.
+
+For example, the following files are involved in defining a new module named
+`scoreboard`:
 
 ```text
-src/examplemod/
+src/
+  scoreboard/
+    Makefile.am
+    scoreboard.c
+    scoreboard.h
+    README.md
+  m65tool/
+    Makefile.am
+  Makefile.am
+tests/
+  scoreboard/
+    Makefile.am
+    test_scoreboard.c
+  Makefile.am
+configure.ac
 ```
 
-Each module must have at least one `.h` file and one
-`.c` named after the module containing the declarations and definitions of all
-exported functions and globals.
+- `src/scoreboard/` : Source files for the module. At minimum, this is one `.h`
+  and one `.c` named after the module that declare and define the module's
+  exports. This directory can include inner compilation units (not exported)
+  with their own `.c` and `.h` files.
+- `src/scoreboard/Makefile.am` : Automake definitions that specify all source
+  files, the header files of dependencies, and boilerplate for the mock library
+  for this module.
+- `src/scoreboard/README.md` : Developer documentation for the scoreboard
+  module.
+- `src/m65tool/Makefile.am` : Linker rule that lists the new module's library.
+- `src/Makefile.am` : Lists every module in `SUBDIRS`.
+- `tests/scoreboard/` : At least one file named `test_*.c` containing a test
+  suite for the module. The `main()` runner is generated
+  at build time from naming conventions in this file to avoid having to
+  maintain duplicate lists of tests. This `.c` file `#include`s the header of
+  the module under test, the headers of mocked dependencies, and `"unity.h"`
+  for test assertions.
+- `tests/scoreboard/Makefile.am` : Automake definitions that specify all source
+  files for the test, header files, and link dependencies on the module and
+  mock libraries. A reference to a "runner" source file triggers the generation
+  of the runner code.
+- `tests/Makefile.am` : Lists every module in `SUBDIRS`.
+- `configure.ac` : Every `Makefile` (without the `.am` extension) _must_ be
+  mentioned in `AC_CONFIG_FILES`, including both `src/` and `tests/`.
 
-```text
-src/examplemod/
-  examplemod.c
-  examplemod.h
-```
+### Module source files
 
-Each exported function and global must begin with the name of the module
-followed by an underscore. In `examplemod.h`:
+Here is an example `src/scoreboard/scoreboard.h`:
 
 ```c
-#ifndef EXAMPLEMOD_H_
-#define EXAMPLEMOD_H_
+#ifndef SCOREBOARD_H_
+#define SCOREBOARD_H_
+
+/**
+ * Scoreboard scores for a two-team game.
+ */
+typedef struct t_board {
+  int home_team_score;
+  int away_team_score;
+} scoreboard_board;
 
 /**
  * @brief Add two numbers.
  * @param a first addend
  * @param b second addend
  * @returns The sum of a and b
- **/
-int examplemod_add(int a, int b);
+ */
+int scoreboard_add(int a, int b);
 
 #endif
 ```
 
-In `examplemod.c`:
+And here is an example `src/scoreboard/scoreboard.c`:
 
 ```c
-#include "examplemod.h"
+#include "scoreboard.h"
 
-int examplemod_add(int a, int b) {
+static const uint8_t BUFSIZE = 256;
+static char buf[BUFSIZE];
+
+static int sum(a, b) {
   return a + b;
+}
+
+int scoreboard_add(int a, int b) {
+  return sum(a, b);
 }
 ```
 
-A module can have additional source files private to the module.
+Modules use a name prefix as a namespace. Module exports start with the name of
+the module followed by an underscore, e.g. `scoreboard_add`.
+
+All headers are define-guarded. The public header for the module uses the
+symbol `SCOREBOARD_H_`. (The trailing underscore is a GNU convention.)
+
+A module can have additional compilation units (source files) private to the
+module.
 
 ```text
-src/examplemod/
+src/scoreboard/
   ...
   priv.c
   priv.h
 ```
 
-Functions and globals exported from a private source file to another source
-file in the module must begin with an underscore, the name of the module, and
-another underscore.
+Inner compilation units that export symbols to other compilation units in the
+module _must also_ use a prefix, with a leading underscore to indicate that
+the symbol is private to the module, e.g. `_scoreboard_supportfunc`. (If an
+inner compilation unit might have a public name that conflicts with another,
+you may use the name of the compilation unit in the prefix, such as
+`_scoreboard_priv_supportfunc`.) The define guard in the header uses a similar
+prefix: `_SCOREBOARD_PRIV_H_`.
+
+File-scope functions and storage must be declared `static`. They do not need a
+name prefix.
+
+Anything declared in a header file must have a doc comment. Style notes:
+
+- Opening double-star comment: `/** ... */`
+- First sentence is a brief description with the item as an implied noun: "Adds
+  two numbers," not "Add two numbers."
+- For functions: `@brief desc`, `@param paramName desc`, `@returns desc` Longer
+  description can follow the brief description and precede the parameter list.
+- For typedefs: one comment above the typedef, one comment above each element.
+- For global storage: one comment above. (But prefer non-exported global
+  storage and exported accessor functions.)
+
+### Depending on other modules
+
+A module can depend on another module like so:
+
+- Declare the dependency's header file as a source file in `Makefile.am`. (See
+  below.)
+- `#include "module/module.h"` where appropriate.
+
+The `src/` directory is on the include path, so the `#include` path includes
+the module directory name. A module can offer more than one public header file.
+This fact would be documented in the module's `README.md` file.
+
+Linkage occurs in the binary, i.e. the module that defines `main()`. The binary
+must link the module and all of its dependencies. In practice, the m65tool will
+link all modules, and test runners will link only the module under test and the
+mock libraries of its dependencies. Module dependencies must be documented
+manually in the module's `README.md` file.
+
+### Module tests and mocks
+
+Unit tests use the [Unity Test](http://www.throwtheswitch.org/unity) framework
+and the [CMock](http://www.throwtheswitch.org/cmock) mocking framework. These
+are added to the project as submodules. C sources of the frameworks are built
+into the project, and build rules invoke code generators.
+
+A test file such as `test_scoreboard.c` might look like this:
 
 ```c
-#ifndef _EXAMPLEMOD_PRIV1_H_
-#define _EXAMPLEMOD_PRIV1_H_
-
-/**
- * @brief Doubles an integer.
- * @param a The integer to double.
- * @returns Twice the integer.
- **/
-int _examplemod_double(int a);
-
-#endif
-```
-
-Static functions (private to the file) have no restrictions on names. They must
-be declared `static`.
-
-Each module subdirectory has a `Makefile.am` that builds the module to a
-"convenience library." This is a `.a` file marked as `noinst_` so that it does
-not get installed on the system, only linked to binaries. In `Makefile.am`:
-
-```makefile
-noinst_LIBRARIES = src/examplemod/libexamplemod.a
-src_examplemod_libexamplemod_a_SOURCES = \
-  src/examplemod/examplemod.c \
-  src/examplemod/examplemod.h \
-  src/examplemod/priv1.c \
-  src/examplemod/priv1.h
-```
-
-To depend on a module from another module, cite the dependency's `.h` in
-`SOURCES`, and its `.a` in `LDADD`. Do not refer to any of the dependency's
-internal source files. For example, in `src/m65tool/Makefile.am`:
-
-```makefile
-AM_CPPFLAGS = -I$(top_srcdir)/src
-
-bin_PROGRAMS = m65tool
-src_m65tool_m65tool_SOURCES = \
-  m65tool.c \
-  ../examplemod/examplemod.h
-src_m65tool_m65tool_LDADD = ../examplemod/libexamplemod.a
-```
-
-By convention, the top-level `src/` directory is added to the include path (via
-`AM_CPPFLAGS`, one in each `Makefile.am`). Module headers are referenced by the
-module subdirectory name and the header name:
-
-```c
-#include "examplemod/examplemod.h"
-```
-
-Add the module's `Makefile` (without the `.am` suffix) to `AC_CONFIG_FILES` in
-`configure.ac`:
-
-```makefile
-AC_CONFIG_FILES(
-  [Makefile]
-  [src/Makefile]
-  [src/examplemod/Makefile]
-  ...
-)
-```
-
-Also add the module subdirectory to `SUBDIRS` in `src/Makefile.am`:
-
-```makefile
-SUBDIRS = \
-  examplemod \
-  m65tool
-```
-
-## Tests
-
-Unit tests are in the `tests/` directory, in a subdirectory named after the
-module. Each source file of tests has a name that starts with `test_`, so it
-can be found by code generators.
-
-```text
-tests/examplemod/
-  test_examplemod.c
-```
-
-Tests use the [Unity Test](https://github.com/ThrowTheSwitch/Unity) framework.
-See [Unity Assertions
-Reference](https://github.com/ThrowTheSwitch/Unity/blob/master/docs/UnityAssertionsReference.md).
-
-Each test is a `void f(void)` function whose name begins with `test_`. By
-convention, the test function name has three sections: the unit of work, the
-state under test, and the expected behavior. Each section uses `CapitolCasing`
-and is separated by underscores.
-
-```c
-void test_ExamplemodPrintAllMessages_Always_PrintsMessages(void) {
-  ...
-}
-```
-
-A file of tests can contain a `void setUp(void)` and `void tearDown(void)` function, which are
-called automatically by the framework before and after each test.
-
-```c
-#include "examplemod/examplemod.h"
+#include "scoreboard/scoreboard.h"
+#include "dependency/mocks/mock_dependency.h"
 #include "unity.h"
 
 void setUp(void) {}
 
 void tearDown(void) {}
 
-void test_ExamplemodPrintAllMessages_Always_PrintsMessages(void) {
-  examplemod_print_all_messages();
-
-  TEST_FAIL_MESSAGE("This is a test that fails.");
+void test_Square_WithPositiveInteger_ReturnsCorrectResult(void) {
+  dependency_mult_ExpectAndReturn(7, 7, 49);
+  int result = examplemod_square(7);
+  TEST_ASSERT_EQUAL_INT(49, result);
 }
 ```
 
-Each test has a "runner" source file that is generated at build time by this
-rule, one per `_test.c` file. It depends on the module under test, as well as
-Unity Test.
+- `#include` the header of the module under test.
+- `#include` the header for the mock of each dependency.
+- `#include "unity.h"` for the test assertions.
+- `setUp()` and `tearDown()` are called before and after each test,
+  respectively.
+- `void test_...(void) { ... }` performs a single test and asserts validation.
 
-```makefile
-tests/examplemod/examplemod_test_Runner.c:
-  test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
-  $(RUBY) $(top_srcdir)/third-party/Unity/auto/generate_test_runner.rb $(top_srcdir)/tests/examplemod/examplemod_test.c
+The `test_` prefix of the source filename and the `test_` prefix of the test
+functions are required. They are used by the code generator to produce a test
+runner `main()` routine.
 
-tests_examplemod_examplemod_test_Runner_SOURCES = tests/examplemod/examplemod_test_Runner.c tests/examplemod/examplemod_test.c third-party/Unity/src/unity.c third-party/Unity/src/unity.h third-party/Unity/src/unity_internals.h third-party/Unity/auto/generate_test_runner.rb
-tests_examplemod_examplemod_test_Runner_LDADD = src/examplemod/libexamplemod.a
-tests_examplemod_examplemod_test_Runner_LDFLAGS = -pthread
-tests_examplemod_examplemod_test_Runner_CPPFLAGS = -I$(top_srcdir)/third-party/Unity/src -I$(top_srcdir)/src/examplemod
-```
+The rest of the test function name should be:
 
-Each generated `_Runner.c` source file must be specified under `CLEANFILES`.
-Each `_Runner` program must be specified under `check_PROGRAMS`.
+1. The method name
+2. The state under test
+3. The expected behavior
 
-```makefile
-CLEANFILES = tests/examplemod/examplemod_test_Runner.c
-check_PROGRAMS = tests/examplemod/examplemod_test_Runner
-TESTS = $(check_PROGRAMS)
-```
+Each part is described in CamelCase and separated by underscores. As a matter
+of style, this is the only code that uses CamelCase names.
 
-To run all tests:
+After the Makefiles are set up (see below), to run all tests:
 
 ```text
 make check
 ```
 
-To run specific tests:
+To run a specific test suite:
 
 ```text
-make check TESTS='tests/examplemod/examplemod_test_Runner'
+make check TESTS='tests/scoreboard/runner_test_scoreboard'
 ```
 
-The `_Runner` programs are binary programs and can be used with a debugger.
+The runner programs are binary programs and can be used with a debugger.
+
+### Module Makefiles
+
+Each module subdirectory has a `Makefile.am` that builds the module to a
+"convenience library." This is a `.a` file marked as `noinst_` so that it does
+not get installed on the system, only linked to binaries. In
+`src/scoreboard/Makefile.am`:
+
+```makefile
+include ../module_common.mk
+
+noinst_LIBRARIES = libscoreboard.a
+libscoreboard_a_SOURCES = \
+	scoreboard.c \
+	scoreboard.h \
+	priv1.c \
+	priv1.h \
+	../dependency/dependency.h
+
+check_LIBRARIES = libscoreboard_mock.a
+libscoreboard_mock_a_SOURCES = \
+	mocks/mock_scoreboard.c \
+	mocks/mock_scoreboard.h
+libscoreboard_mock_a_CPPFLAGS = $(MOCK_CPPFLAGS)
+```
+
+The dependency module is only mentioned by its header file. Source files
+internal to the dependency module must not be mentioned. Linkage is resolved in
+the binary module, such as in `src/m65tool/Makefile.am`:
+
+```makefile
+m65tool_LDADD = \
+	../scoreboard/libscoreboard.a \
+	../dependency/libdependency.a
+```
+
+The module's test directory also has a `Makefile.am`:
+
+```makefile
+check_PROGRAMS = test_scoreboard
+include ../test_common.mk
+
+test_scoreboard_SOURCES = \
+	./runners/runner_test_scoreboard.c \
+	test_scoreboard.c \
+	../../src/scoreboard/scoreboard.h \
+	../../src/dependency/mocks/mock_dependency.h \
+	$(CMOCK_SOURCES)
+test_scoreboard_LDADD = \
+	../../src/scoreboard/libscoreboard.a \
+	../../src/dependency/libdependency_mock.a
+test_scoreboard_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/dependency
+```
+
+- Use this pretty much verbatim, where `scoreboard` is the module under test
+  and `dependency` is an example of a dependency module.
+- Unit tests only test the behavior of the module. Calls to other modules
+  should be mocked using their `src/*/mocks/mock_*.h` header and
+  `src/*/lib*_mock.a` library. The test code generator produces these source
+  files based on the dependency module's header file.
+
+Add the source and test module subdirectories to `SUBDIRS` in both
+`src/Makefile.am` and `tests/Makefile.am`:
+
+```makefile
+SUBDIRS = \
+  dependency \
+  m65tool \
+  scoreboard
+```
+
+Finally, add the module's source `Makefile` and test `Makefile` (without the
+`.am` suffix) to `AC_CONFIG_FILES` in `configure.ac`:
+
+```makefile
+AC_CONFIG_FILES(
+  [Makefile]
+  [src/Makefile]
+  [src/scoreboard/Makefile]
+  [tests/scoreboard/Makefile]
+  ...
+)
+```
+
+Be sure to re-run `./configure` after making these changes.
 
 ## Adding files to the distribution
 
@@ -288,13 +458,15 @@ in `docs/`, for example.
 To make the distribution:
 
 ```text
-make dist
+make distcheck
 ```
 
 This produces a file such as `m65tool-0.1.tar.gz`. This is the file someone
 will download to build and install the tool from source.
 
-You can run through the steps to build from the distribution like so:
+The `distcheck` target creates the distribution, and also runs through an
+isolated test build and check. You can test the distribution file manually like
+so:
 
 ```text
 tar xzf m65tool-0.1.tar.gz
@@ -303,15 +475,11 @@ cd m65tool-0.1
 make
 ```
 
-Be sure to examine the distribution to make sure the appropriate non-build
-files are included.
-
 ## VSCode
 
-`.vscode/settings.json`
-
-- `"C_Cpp.default.includePath"` must include each module source directory to
-  resolve header includes.
+The project repo includes a `.vscode/settings.json` file for [Visual Studio
+Code](https://code.visualstudio.com/) users. It sets some formatting variables,
+and also sets `"C_Cpp.default.includePath"` so VSCode can find headers.
 
 ## Style
 
@@ -369,7 +537,7 @@ Comments:
   function and variable declaration. Use `@file`, `@brief`, `@param`,
   `@returns`. Use `/** ... */`.
 
-Reminders of C best practices:
+Other C best practices:
 
 - Use `const` on pointer-type parameters to indicate that the memory is not
   modified. Take care to use the `const` keyword on both the pointer type and
@@ -392,3 +560,12 @@ Reminders of C best practices:
 
 - Use `stdbool.h` for `bool`, `true`, and `false`. Use `NULL` from `stdlib.h`
   (or `stdio.h` or `stddef.h`).
+
+## TODO
+
+- Test and document debugger integration with VSCode.
+- Test and document Valgrind usage.
+- Implement `make format`.
+- Test dist on Linux.
+- Test and document building _for_ Windows, and (separately) _on_ Windows.
+- Fix `make check` in a subdir build tree?
