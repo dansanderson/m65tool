@@ -63,6 +63,8 @@ def get_untracked_files(root_dir=None, only_ignored=True):
     root_dir = os.path.abspath(root_dir or cwd)
     os.chdir(root_dir)
 
+    # git does not support --recurse-submodules with --others. I know, it looks
+    # tempting, but it doesn't work. We do our own submodule recursion.
     ls_files_cmd = ['git', 'ls-files', '--others', '--exclude-standard']
     if only_ignored:
         ls_files_cmd.insert(2, '--ignored')
