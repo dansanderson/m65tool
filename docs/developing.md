@@ -2,10 +2,6 @@
 
 TODO:
 
-- How to keep internal module headers private? Right now I'm adding the entire
-  module subdir to the calling module's include path, which includes internal
-  headers.
-
 - How to keep internal cross-file (non-static) methods private? Are these
   exposed in the `.a`? Should they use an `_examplemod_` prefix?
 
@@ -90,13 +86,18 @@ Each exported function and global must begin with the name of the module
 followed by an underscore. In `examplemod.h`:
 
 ```c
+#ifndef EXAMPLEMOD_H_
+#define EXAMPLEMOD_H_
+
 /**
  * @brief Add two numbers.
  * @param a first addend
  * @param b second addend
- * @returns The sum of a and b.
+ * @returns The sum of a and b
  **/
 int examplemod_add(int a, int b);
+
+#endif
 ```
 
 In `examplemod.c`:
@@ -118,33 +119,91 @@ src/examplemod/
   priv.h
 ```
 
-Each module is built to an internal `.a` library for use by other modules. In
-`Makefile.am`:
+Functions and globals exported from a private source file to another source
+file in the module must begin with an underscore, the name of the module, and
+another underscore.
+
+```c
+#ifndef _EXAMPLEMOD_PRIV1_H_
+#define _EXAMPLEMOD_PRIV1_H_
+
+/**
+ * @brief Doubles an integer.
+ * @param a The integer to double.
+ * @returns Twice the integer.
+ **/
+int _examplemod_double(int a);
+
+#endif
+```
+
+Static functions (private to the file) have no restrictions on names. They must
+be declared `static`.
+
+Each module subdirectory has a `Makefile.am` that builds the module to a
+"convenience library." This is a `.a` file marked as `noinst_` so that it does
+not get installed on the system, only linked to binaries. In `Makefile.am`:
 
 ```makefile
 noinst_LIBRARIES = src/examplemod/libexamplemod.a
-src_examplemod_libexamplemod_a_SOURCES = src/examplemod/examplemod.c src/examplemod/examplemod.h src/examplemod/priv1.c src/examplemod/priv1.h
+src_examplemod_libexamplemod_a_SOURCES = \
+  src/examplemod/examplemod.c \
+  src/examplemod/examplemod.h \
+  src/examplemod/priv1.c \
+  src/examplemod/priv1.h
 ```
 
 To depend on a module from another module, cite the dependency's `.h` in
-`SOURCES`, its `.a` in `LDADD`, and its source dir as an inclue in `CPPFLAGS`.
-There is no reason to mention any of the dependency's internal source files.
+`SOURCES`, and its `.a` in `LDADD`. Do not refer to any of the dependency's
+internal source files. For example, in `src/m65tool/Makefile.am`:
 
 ```makefile
-bin_PROGRAMS = src/m65tool/m65tool
-src_m65tool_m65tool_SOURCES = src/m65tool/m65tool.c src/examplemod/examplemod.h
-src_m65tool_m65tool_LDADD = src/examplemod/libexamplemod.a
-src_m65tool_m65tool_CPPFLAGS = -I$(top_srcdir)/src/examplemod
+AM_CPPFLAGS = -I$(top_srcdir)/src
+
+bin_PROGRAMS = m65tool
+src_m65tool_m65tool_SOURCES = \
+  m65tool.c \
+  ../examplemod/examplemod.h
+src_m65tool_m65tool_LDADD = ../examplemod/libexamplemod.a
+```
+
+By convention, the top-level `src/` directory is added to the include path (via
+`AM_CPPFLAGS`, one in each `Makefile.am`). Module headers are referenced by the
+module subdirectory name and the header name:
+
+```c
+#include "examplemod/examplemod.h"
+```
+
+Add the module's `Makefile` (without the `.am` suffix) to `AC_CONFIG_FILES` in
+`configure.ac`:
+
+```makefile
+AC_CONFIG_FILES(
+  [Makefile]
+  [src/Makefile]
+  [src/examplemod/Makefile]
+  ...
+)
+```
+
+Also add the module subdirectory to `SUBDIRS` in `src/Makefile.am`:
+
+```makefile
+SUBDIRS = \
+  examplemod \
+  m65tool
 ```
 
 ## Tests
 
 Unit tests are in the `tests/` directory, in a subdirectory named after the
-module. Each source file of tests has a name that ends in `_test.c`.
+module. Each source file of tests has a name that starts with `test_`, so it
+can be found by code generators.
 
 ```text
 tests/examplemod/
-  examplemod_test.c
+  test_examplemod.c
 ```
 
 Tests use the [Unity Test](https://github.com/ThrowTheSwitch/Unity) framework.
@@ -166,10 +225,7 @@ A file of tests can contain a `void setUp(void)` and `void tearDown(void)` funct
 called automatically by the framework before and after each test.
 
 ```c
-#include "examplemod.h"
-
-#include <stdio.h>
-
+#include "examplemod/examplemod.h"
 #include "unity.h"
 
 void setUp(void) {}

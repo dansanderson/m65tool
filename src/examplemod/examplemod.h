@@ -6,4 +6,6 @@
  */
 void examplemod_print_all_messages(void);
 
+int examplemod_square(int a);
+
 #endif

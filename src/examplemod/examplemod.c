@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "exampletwo/exampletwo.h"
 #include "priv1.h"
 
 void print_another(void);
@@ -15,4 +16,8 @@ void examplemod_print_all_messages(void) {
 
 void print_another(void) {
   puts("print_another()");
+}
+
+int examplemod_square(int a) {
+  return exampletwo_mult(a, a);
 }

@@ -1,5 +1,5 @@
 AC_INIT([m65tool], [0.1])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror subdir-objects])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability subdir-objects])
 
 AC_PROG_CC
 AC_PROG_RANLIB
@@ -14,6 +14,7 @@ AC_CONFIG_FILES(
   [Makefile]
   [src/Makefile]
   [src/examplemod/Makefile]
+  [src/exampletwo/Makefile]
   [src/m65tool/Makefile]
   [tests/Makefile]
   [tests/examplemod/Makefile])
