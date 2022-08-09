@@ -481,6 +481,12 @@ The project repo includes a `.vscode/settings.json` file for [Visual Studio
 Code](https://code.visualstudio.com/) users. It sets some formatting variables,
 and also sets `"C_Cpp.default.includePath"` so VSCode can find headers.
 
+GNU Autotools generates files inside the `third-party/` submodule directories.
+Git is configured to "ignore dirty" changes in these files when reporting repo
+status. Unfortunately, VSCode does not yet support this. It will report that
+files in `third-party/` have changed in the source and version control panels.
+You can ignore these.
+
 ## Style
 
 m65tool uses standard C17. GNU extensions are disabled to increase the chances
