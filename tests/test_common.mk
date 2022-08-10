@@ -9,7 +9,8 @@ AM_LDFLAGS = -pthread
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/third-party/CMock/vendor/unity/src \
 	-I$(top_srcdir)/third-party/CMock/src \
-	-I$(top_srcdir)/src
+	-I$(top_srcdir)/src \
+	-I../../src
 
 TESTS = $(check_PROGRAMS)
 

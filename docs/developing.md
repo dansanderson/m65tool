@@ -118,45 +118,44 @@ make superclean
 ### Building to a different directory
 
 This behavior of creating build files in the source tree is the default for GNU
-Autotools when run from the project root directory. In theory, you can generate
-the build tree in another directory, like so:
+Autotools when run from the project root directory. You can generate the build
+tree in another directory, like so:
 
 ```text
 mkdir build
 cd build
 ../configure
 make
+make check
 ```
 
-As of this writing, I have a bug in my test Makefile logic that prevents tests
-from running this way. It's probably fixable: it's an easy mistake to refer to
-a source path when you mean to refer to a build path. I wasn't motivated to fix
-it because a few files still get generated in the source tree regardless.
+Note that `autoreconf --install` and `../configure` still emit intermediate
+build artifacts in the source tree. This only relocates the output of `make`
+targets (assuming the `make` rules are written correctly).
 
 ### Quieter builds
 
 The build produces a lot of console output. This is the default for GNU
 Autotools, and I have left it this way for now for troubleshooting.
 
-To tell it to produce less build output, give `--enable-silent-rules` to
+To tell `make` to produce less output, such as to make compiler warnings and
+errors easier to see, give it the `-s` option:
+
+```text
+make -s
+make -s check
+```
+
+To make this the default for `make`, give `--enable-silent-rules` to
 `./configure`:
 
 ```text
 ./configure --enable-silent-rules
+make
 ```
 
-You can silence `make` further with `--no-print-directory`:
-
-```text
-make --no-print-directory
-```
-
-I have not yet set up [silent
-rules](https://www.gnu.org/software/automake/manual/html_node/Automake-Silent-Rules.html)
-for things like test code generators.
-
-To make `--enable-silent-rules` the default in `configure.ac`, uncomment this
-line:
+To further make `--enable-silent-rules` the default in `configure.ac`, uncomment this
+line. Note that this quiets output for everyone, not just you.
 
 ```text
 AM_SILENT_RULES([yes])
