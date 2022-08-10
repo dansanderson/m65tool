@@ -4,6 +4,8 @@ These are instructions for developing m65tool. If you just want to build
 m65tool from source for yourself, you can download the source distribution. See
 README.md.
 
+See also [the developer cheat sheet](dev_cheat_sheet.md).
+
 ## Prerequisites
 
 Make sure you have the following support tools installed:
@@ -29,6 +31,8 @@ installed, run the following command to install the remaining tools:
 ```text
 brew install ruby git clang-format
 ```
+
+> TODO: Prerequisites for Windows builds and Windows target builds (MinGW)
 
 ## Checking out and building from the repo
 
@@ -81,16 +85,13 @@ directories. It is usually safe to ignore them. Git does: all intermediate
 files are mentioned in `.gitignore`, so they don't appear as changed and won't
 be committed to the repo.
 
-There are several cleaning targets included by Autotools:
+There are cleaning targets included by Autotools:
 
 - `make clean` deletes build artifacts, just enough to inspire a subsequent
   `make` to re-build most things.
 
 - `make distclean` also deletes some output by `./configure`. You must re-run
   `./configure` before you can `make` again.
-
-- `make maintainer-clean` deletes a few more intermediate files. By design, it
-  leaves enough files for `./configure && make` to succeed.
 
 I found it was important to fully restore the project directory to its Git repo
 state to reset artifacts from erroneous Makefile rules. To make this easier, I
@@ -160,6 +161,29 @@ line. Note that this quiets output for everyone, not just you.
 ```text
 AM_SILENT_RULES([yes])
 ```
+
+### Debug vs. optimized builds
+
+The default build rules for `./configure` set `CFLAGS` such that debugging
+symbols are included (`-g`) and the binary is optimized at level 2 (`-O2`).
+
+You can pass new CFLAGS to `./configure` to change this behavior. To disable
+optimization so that debuggers have accurate source data, and also set a
+`DEBUG` preprocessor variable for conditional compilation:
+
+```text
+./configure CPPFLAGS=-DDEBUG CFLAGS="-ggdb -O0"
+```
+
+To disable debugging symbols, enable more optimizations, and also set a
+`NDEBUG` preprocessor variable for conditional compilation:
+
+```text
+./configure CPPFLAGS=-DNDEBUG CFLAGS="-g0 -O3"
+```
+
+[This SO answer](https://stackoverflow.com/a/4680578/453278) recommends against
+adding these definitions to Makefiles.
 
 ## Modules
 
