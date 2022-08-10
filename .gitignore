@@ -11,7 +11,8 @@ m65tool-0.1.tar.gz
 test_*.log
 test_*.trs
 /tests/*/runners
-/src/*/mocks
+/src/*/mock_*.c
+/src/*/mock_*.h
 
 # VSCode
 .vscode/*.log

@@ -1,16 +1,18 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src
 
-mocks/mock_%.c: %.h
+# Due to a limitation in how CMock #includes the module header from the mock,
+# we either need to generate the mock in the same directory (MOCK_OUT=.) or use
+# an undocumented config option (orig_header_include_fmt) to force it to use a
+# relative path. This opts for the former option.
+mock_%.c: %.h
 	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	CMOCK_DIR=$(top_srcdir)/third-party/CMock \
-	MOCK_OUT=mocks \
-	$(RUBY) $(top_srcdir)/third-party/CMock/scripts/create_mock.rb $(top_srcdir)/src/$(subst .c,,$(subst mocks/mock_,,$@))/$(subst .c,,$(subst mocks/mock_,,$@)).h
+	MOCK_OUT=. \
+	$(RUBY) $(top_srcdir)/third-party/CMock/scripts/create_mock.rb $(top_srcdir)/src/$(subst .c,,$(subst mock_,,$@))/$(subst .c,,$(subst mock_,,$@)).h
 
-mocks/mock_%.h: mocks/mock_%.c
+mock_%.h: mock_%.c
 
 MOCK_CPPFLAGS = \
 	-I$(top_srcdir)/third-party/CMock/vendor/unity/src \
 	-I$(top_srcdir)/third-party/CMock/src \
 	-I$(top_srcdir)/src
-
-CLEANFILES = mocks

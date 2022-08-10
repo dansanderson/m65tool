@@ -18,7 +18,7 @@ system for details. On Ubuntu:
 
 ```text
 sudo apt-get update
-sudo apt-get install build-essential autoconf ruby-full git
+sudo apt-get install build-essential autoconf ruby-full git clang-format
 ```
 
 Mac users are strongly recommended to install [Homebrew](https://brew.sh/) to
@@ -27,7 +27,7 @@ Line Tools, which provides a gcc-compatible C compiler and GNU Automake. Once
 installed, run the following command to install the remaining tools:
 
 ```text
-brew install ruby git
+brew install ruby git clang-format
 ```
 
 ## Checking out and building from the repo
@@ -105,6 +105,14 @@ python3 superclean.py
 autoreconf --install
 ./configure
 make
+```
+
+There's a make target for `superclean.py`. Note that this will not function if
+there is a syntax error in the Makefile, which might be the condition you're
+attempting to clean up by running `superclean.py` in the first place.
+
+```text
+make superclean
 ```
 
 ### Building to a different directory
@@ -322,7 +330,7 @@ A test file such as `test_scoreboard.c` might look like this:
 
 ```c
 #include "scoreboard/scoreboard.h"
-#include "dependency/mocks/mock_dependency.h"
+#include "dependency/mock_dependency.h"
 #include "unity.h"
 
 void setUp(void) {}
@@ -365,10 +373,21 @@ make check
 To run a specific test suite:
 
 ```text
-make check TESTS='tests/scoreboard/runner_test_scoreboard'
+make check TESTS=test_scoreboard
 ```
 
-The runner programs are binary programs and can be used with a debugger.
+The runner programs are binary programs and can be used with a debugger. To
+build a specific test suite:
+
+```text
+make -C tests/examplemod test_examplemod
+```
+
+To run its binary:
+
+```text
+./tests/examplemod/test_examplemod
+```
 
 ### Module Makefiles
 
@@ -390,8 +409,8 @@ libscoreboard_a_SOURCES = \
 
 check_LIBRARIES = libscoreboard_mock.a
 libscoreboard_mock_a_SOURCES = \
-	mocks/mock_scoreboard.c \
-	mocks/mock_scoreboard.h
+	mock_scoreboard.c \
+	mock_scoreboard.h
 libscoreboard_mock_a_CPPFLAGS = $(MOCK_CPPFLAGS)
 ```
 
@@ -415,7 +434,7 @@ test_scoreboard_SOURCES = \
 	./runners/runner_test_scoreboard.c \
 	test_scoreboard.c \
 	../../src/scoreboard/scoreboard.h \
-	../../src/dependency/mocks/mock_dependency.h \
+	../../src/dependency/mock_dependency.h \
 	$(CMOCK_SOURCES)
 test_scoreboard_LDADD = \
 	../../src/scoreboard/libscoreboard.a \
@@ -426,7 +445,7 @@ test_scoreboard_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/dependency
 - Use this pretty much verbatim, where `scoreboard` is the module under test
   and `dependency` is an example of a dependency module.
 - Unit tests only test the behavior of the module. Calls to other modules
-  should be mocked using their `src/*/mocks/mock_*.h` header and
+  should be mocked using their `src/*/mock_*.h` header and
   `src/*/lib*_mock.a` library. The test code generator produces these source
   files based on the dependency module's header file.
 
@@ -495,6 +514,16 @@ status. Unfortunately, VSCode does not yet support this. It will report that
 files in `third-party/` have changed in the source and version control panels.
 You can ignore these.
 
+VSCode includes a built-in version of `clang-format`, which works with the
+provided `.clang-format` settings file. I like to have VSCode aggressively
+auto-format code, so there is limited need to run `clang-format`
+(`make format`) manually.
+
+The project includes task configurations for debugging unit test suites. With a
+`test_modname.c` file open, Run > Start Debugging (F5) and select "Debug test
+suite." This generates and builds the test runner, then runs the test in the
+debugger. Use VSCode breakpoints and related features.
+
 ## Style
 
 m65tool uses standard C17. GNU extensions are disabled to increase the chances
@@ -502,14 +531,12 @@ that the code is compatible with other compilers such as Visual Studio 2019.
 
 Code style is based on the [Google C/C++ Style
 Guide](https://google.github.io/styleguide/cppguide.html). It is enforced by
-`clang-format`. Especially:
+`clang-format`. There's a `make format` target that runs it.
 
 - Indents are two spaces. No tabs, unless in `Makefile.am` where tabs are
   significant.
 
 - Ordering of `#include`. (clang-format will re-order correctly.)
-
-- Prefer `sizeof(var)` to `sizeof(type)`.
 
 Some advice is accepted from the [GNU Coding
 Standards](https://www.gnu.org/prep/standards/standards.html), especially:
@@ -552,6 +579,8 @@ Comments:
   `@returns`. Use `/** ... */`.
 
 Other C best practices:
+
+- Prefer `sizeof(var)` to `sizeof(type)`.
 
 - Use `const` on pointer-type parameters to indicate that the memory is not
   modified. Take care to use the `const` keyword on both the pointer type and

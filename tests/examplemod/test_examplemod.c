@@ -1,5 +1,5 @@
 #include "examplemod/examplemod.h"
-#include "exampletwo/mocks/mock_exampletwo.h"
+#include "exampletwo/mock_exampletwo.h"
 #include "unity.h"
 
 void setUp(void) {}

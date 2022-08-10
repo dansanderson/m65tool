@@ -10,6 +10,8 @@ libexamplemod_a_SOURCES = \
 
 check_LIBRARIES = libexamplemod_mock.a
 libexamplemod_mock_a_SOURCES = \
-	mocks/mock_examplemod.c \
-	mocks/mock_examplemod.h
+	mock_examplemod.c \
+	mock_examplemod.h
 libexamplemod_mock_a_CPPFLAGS = $(MOCK_CPPFLAGS)
+
+CLEANFILES = mock_examplemod.c mock_examplemod.h
