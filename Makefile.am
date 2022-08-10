@@ -11,9 +11,9 @@ EXTRA_DIST = \
 .PHONY: superclean format
 
 superclean:
-	test -e "$(PYTHON)" || { echo "\nPlease install Python 3.x to run superclean.\n"; exit 1; }
+	@test -e "$(PYTHON)" || { echo "\nPlease install Python 3.x to run superclean.\n"; exit 1; }
 	$(PYTHON) superclean.py
 
 format:
-	test -n "$(CLANG_FORMAT)" || { echo "\nPlease install clang-format to run format.\n"; exit 1; }
+	@test -n "$(CLANG_FORMAT)" || { echo "\nPlease install clang-format to run format.\n"; exit 1; }
 	find . -type f \( -path './src/*' -o -path './tests/*' \) \( -iname '*.h' -o -iname '*.c' \) | xargs $(CLANG_FORMAT) --style=file -i

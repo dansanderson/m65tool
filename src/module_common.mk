@@ -14,7 +14,7 @@ endif
 # an undocumented config option (orig_header_include_fmt) to force it to use a
 # relative path. This opts for the former option.
 mock_%.c: %.h
-	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	CMOCK_DIR=$(top_srcdir)/third-party/CMock \
 	MOCK_OUT=. \
 	$(RUBY) $(top_srcdir)/third-party/CMock/scripts/create_mock.rb $(top_srcdir)/src/$(subst .c,,$(subst mock_,,$@))/$(subst .c,,$(subst mock_,,$@)).h

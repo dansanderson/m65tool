@@ -26,5 +26,5 @@ TESTS = $(check_PROGRAMS)
 CLEANFILES = runners
 
 runners/runner_test_%.c: test_%.c
-	test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
