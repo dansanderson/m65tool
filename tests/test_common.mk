@@ -11,6 +11,15 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third-party/CMock/src \
 	-I$(top_srcdir)/src \
 	-I../../src
+if BUILD_LINUX
+AM_CPPFLAGS += -DLINUX
+endif
+if BUILD_WINDOWS
+AM_CPPFLAGS += -DWINDOWS
+endif
+if BUILD_APPLE
+AM_CPPFLAGS += -DAPPLE
+endif
 
 TESTS = $(check_PROGRAMS)
 

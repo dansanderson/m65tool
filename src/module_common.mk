@@ -1,4 +1,13 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src
+if BUILD_LINUX
+AM_CPPFLAGS += -DLINUX
+endif
+if BUILD_WINDOWS
+AM_CPPFLAGS += -DWINDOWS
+endif
+if BUILD_APPLE
+AM_CPPFLAGS += -DAPPLE
+endif
 
 # Due to a limitation in how CMock #includes the module header from the mock,
 # we either need to generate the mock in the same directory (MOCK_OUT=.) or use

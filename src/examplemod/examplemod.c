@@ -11,6 +11,17 @@ void examplemod_print_all_messages(void) {
   puts("** examplemod print_all_messages start\n");
   priv1_print();
   print_another();
+
+#ifdef LINUX
+  puts("Host OS detected: Linux\n");
+#elif WINDOWS
+  puts("Host OS detected: Windows\n");
+#elif APPLE
+  puts("Host OS detected: macOS\n");
+#else
+  puts("Host OS *not* detected ??\n");
+#endif
+
   puts("** examplemod print_all_messages end\n");
 }
 
