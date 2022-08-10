@@ -412,6 +412,8 @@ libscoreboard_mock_a_SOURCES = \
 	mock_scoreboard.c \
 	mock_scoreboard.h
 libscoreboard_mock_a_CPPFLAGS = $(MOCK_CPPFLAGS)
+
+CLEANFILES = mock_scoreboard.c mock_scoreboard.h
 ```
 
 The dependency module is only mentioned by its header file. Source files
