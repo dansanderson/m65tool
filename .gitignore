@@ -8,6 +8,7 @@ libtool
 config.h
 m65tool-0.1.tar.gz
 /build
+/bin
 test_*.log
 test_*.trs
 /tests/*/runners

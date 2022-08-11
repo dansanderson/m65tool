@@ -177,10 +177,11 @@ def main(args):
         '--root-dir',
         help='The project root directory; by default, uses current working '
         'directory')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
-    if not os.path.exists('.git'):
-        error('Please run this from the project root directory.')
+    if not args.root_dir and not os.path.exists('.git'):
+        error('Please run this from the project root directory, or specify '
+              '--root-dir.')
 
     if not shutil.which('git'):
         error('Cannot find git. Is it on the command path?')

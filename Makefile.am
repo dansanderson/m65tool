@@ -12,8 +12,12 @@ EXTRA_DIST = \
 
 superclean:
 	@test -e "$(PYTHON)" || { echo "\nPlease install Python 3.x to run superclean.\n"; exit 1; }
-	$(PYTHON) superclean.py
+	$(PYTHON) scripts/superclean.py
 
 format:
 	@test -n "$(CLANG_FORMAT)" || { echo "\nPlease install clang-format to run format.\n"; exit 1; }
 	find . -type f \( -path './src/*' -o -path './tests/*' \) \( -iname '*.h' -o -iname '*.c' \) | xargs $(CLANG_FORMAT) --style=file -i
+
+# These are made outside of make by scripts/build.py, but we include them in
+# the clean.
+CLEANFILES = bin/m65tool bin/m65tool.exe
