@@ -32,7 +32,15 @@ installed, run the following command to install the remaining tools:
 brew install ruby git clang-format
 ```
 
-> TODO: Prerequisites for Windows builds and Windows target builds (MinGW)
+> TODO: Test and document prerequisites for Windows native builds. This is
+> probably similar to mega65-tools: [install
+> msys2](https://www.msys2.org/#installation), install
+> tools via "pacman -S make mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb
+> git clang" (and probably `automake`, however pacman spells it), then follow
+> the regular build instructions.
+
+Cross-compiling a Windows binary from Linux requires additional libraries. (See
+below.)
 
 ## Checking out and building from the repo
 
@@ -76,6 +84,31 @@ development. If you make changes to `configure.ac` or `Makefile.am`, running
 `make` _may or may not_ regenerate the appropriate files. If it seems like a
 change to a `Makefile.am` is not having an effect, re-run
 `autoreconf --install` and `./configure`.
+
+### Cross-compiling a Windows binary from Linux
+
+To cross-compile the Windows version from Linux, install additional libraries
+and tools:
+
+```text
+sudo apt-get install binutils-mingw-w64 mingw-w64-common gcc-mingw-w64 libz-mingw-w64-dev
+```
+
+> TODO: mega65-tools is using custom versions of libpng and libusb from Gurce's
+> own server. We may need to borrow those installation instructions when we get
+> to that point.
+
+Tell `./configure` the builder OS is Linux and the host (target) OS is Windows:
+
+```text
+./configure --build=x86_64-pc-linux-gnu --host=x86_64-w64-mingw32
+```
+
+Run `make` to produce `./src/m65tool/m65tool.exe`.
+
+```text
+make
+```
 
 ### Wrangling the intermediate files
 
