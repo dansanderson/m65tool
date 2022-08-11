@@ -106,6 +106,14 @@ The project includes task configurations for debugging unit test suites. With a
 suite." This generates and builds the test runner, then runs the test in the
 debugger. Use VSCode breakpoints and related features.
 
+The Makefile Tools extension tries to do a `--dry-run` build to generate a
+build log it can read for more information. This has some challenges with
+generated source files. There are [some
+troubleshooting
+tips](https://github.com/microsoft/vscode-makefile-tools/blob/main/docs/troubleshooting.md),
+though I don't think I've implemented them fully. If the dry run seems to not
+finish, I just cancel, do a full build, and then Reload Window.
+
 ## Valgrind
 
 [Valgrind](https://valgrind.org/) is the de facto standard tool for analyzing
