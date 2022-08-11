@@ -46,12 +46,36 @@ brew install ruby git clang-format
 
 ### Prerequisites on Windows
 
-Windows users can [install msys2](https://www.msys2.org/#installation) for the
-initial tool set and the `pacman` package manager. Install the remaining
-dependencies, including the MinGW toolchain:
+Windows users must [install MSYS2](https://www.msys2.org/#installation).
+
+From the MSYS terminal, install the dependencies, including the MinGW toolchain:
 
 ```text
-pacman -S make mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb git clang autotools
+pacman -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb clang autotools git
+```
+
+**Important:** Close the **MSYS2 MSYS** terminal, then open an **MSYS2 MinGW**
+terminal. Building in the MSYS terminal works, but produces an `.exe` that only
+works in the MSYS terminal or with msys-2.0.dll installed. Building in the
+MinGW terminal produces a Windows-native `.exe` that runs at any command prompt
+without MSYS2 installed. You can tell you're in the MinGW terminal if `which gcc` returns `/mingw64/bin/gcc`:
+
+```text
+$ which gcc
+/mingw64/bin/gcc
+```
+
+(If you really want an MSYS version of the tool, edit `configure.ac` to remove
+the error message for `msys*` and add `msys*` to the check for Windows host
+values: `cygwin*|mingw*|msys*)`. Then use the following instructions in an
+MSYS2 MSYS terminal.)
+
+The MSYS2 user home directory is under `C:\msys64\home\{user}` (where `{user}`
+is your username). If you clone the repo into an `m65tool` subdirectory, the
+final `.exe` will be:
+
+```text
+C:\msys64\home\{user}\m65tool\src\m65tool\m65tool.exe
 ```
 
 ## Checking out and building from the repo

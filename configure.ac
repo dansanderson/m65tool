@@ -17,6 +17,9 @@ case "${host_os}" in
     darwin*)
         build_apple=yes
         ;;
+    msys*)
+        AC_MSG_ERROR(["Use a MSYS2 MinGW terminal (and not the MSYS2 MSYS terminal) to build a Windows .exe"])
+        ;;
     *)
         AC_MSG_ERROR(["OS $host_os is not supported"])
         ;;
