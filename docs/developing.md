@@ -226,7 +226,7 @@ make
 ```
 
 To further make `--enable-silent-rules` the default in `configure.ac`, uncomment this
-line. Note that this quiets output for everyone, not just you.
+line. (Don't commit this change: we want full messages as the default.)
 
 ```text
 AM_SILENT_RULES([yes])
@@ -269,9 +269,13 @@ Options:
 
 - `--debugbuild` : Produce a debug-enabled binary; default is non-debug optimized
 - `--windows` : Build a Windows binary from Linux; default is native OS
+- `--verbose` : Un-silences make messages; default is to use quieter builds
 
-This re-runs all build steps, then copies the `m65tool` or `m65tool.exe` binary
-to the `./bin/` directory.
+This re-runs all build steps, then creates a symbolic link to the `m65tool` or
+`m65tool.exe` binary in the `./bin/` directory.
+
+You can run `make` after this to re-build with the same options. Re-run
+`build.py` to re-run `./configure` with new options.
 
 ## Adding files to the distribution
 

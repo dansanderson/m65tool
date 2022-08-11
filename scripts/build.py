@@ -97,7 +97,7 @@ def main(args):
 
     os.makedirs(args.bindir, exist_ok=True)
     binpath = os.path.join(args.bindir, binname)
-    shutil.copy(buildpath, binpath)
+    os.symlink(buildpath, binpath)
     print('\n' + binpath + ' : build successful')
 
 
