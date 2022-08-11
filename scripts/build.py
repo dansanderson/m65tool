@@ -43,7 +43,7 @@ def main(args):
         help='Build m65tool.exe for Windows (on Windows or Linux)')
     parser.add_argument(
         '--bindir', default='bin',
-        help='Where to put built binaries')
+        help='Where to put symlinks to built binaries')
     parser.add_argument(
         '--debugbuild', action='store_true',
         help='Enable debugging symbols, disable optimizations')
@@ -57,7 +57,11 @@ def main(args):
         error('Cannot find make. Are build essentials installed?')
 
     if not os.path.exists('configure'):
-        if run(['autoreconf', '--install'], verbose=args.verbose):
+        # I have no idea why but autoreconf misses its "--install" argument if
+        # it's a separate entry in the args array to subprocess.run. Making it
+        # part of the first argument works.
+        if run([shutil.which('autoreconf') + ' --install'],
+                verbose=args.verbose):
             error('\n*** autoreconf failed, aborting.\n')
 
     conf_quiet = ['--enable-silent-rules']
