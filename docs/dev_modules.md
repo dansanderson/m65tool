@@ -1,13 +1,11 @@
 # Modules
 
-The source code of m65tool is organized into _modules._ Each module gets a
+The source code of m65tool is organized into _modules._ Each module has a
 directory under `src/`, a directory under `tests/`, a header of exported
-functions and globals, a "convenience library" (`.a`) build target, and a test
-mock library build target.
-
-Each subdirectory gets a Makefile. An effort was made to minimize module
-boilerplate. Inevitably there are several places that need to change when
-creating a new module.
+functions and globals, and a `module.cfg` file in the source root that declares
+the module type (library or program) and module dependencies. The
+`scripts/makemake.py` tool generates the GNU Autotools `Makefile.am` for the
+project based on this layout.
 
 For example, the following files are involved in defining a new module named
 `scoreboard`:
@@ -15,45 +13,30 @@ For example, the following files are involved in defining a new module named
 ```text
 src/
   scoreboard/
-    Makefile.am
     scoreboard.c
     scoreboard.h
     README.md
+    module.cfg
   m65tool/
-    Makefile.am
-  Makefile.am
+    m65tool.c
+    module.cfg
 tests/
   scoreboard/
-    Makefile.am
     test_scoreboard.c
-  Makefile.am
-configure.ac
 ```
 
 - `src/scoreboard/` : Source files for the module. At minimum, this is one `.h`
   and one `.c` named after the module that declare and define the module's
-  exports. This directory can include inner compilation units (not exported)
-  with their own `.c` and `.h` files.
-- `src/scoreboard/Makefile.am` : Automake definitions that specify all source
-  files, the header files of dependencies, and boilerplate for the mock library
-  for this module.
+  exports. This directory can include inner compilation units (not depended on
+  outside of the module) with their own `.c` and `.h` files.
 - `src/scoreboard/README.md` : Developer documentation for the scoreboard
   module.
-- `src/m65tool/Makefile.am` : Linker rule that lists the new module's library.
-- `src/Makefile.am` : Lists every module in `SUBDIRS`.
 - `tests/scoreboard/` : At least one file named `test_*.c` containing a test
   suite for the module. The `main()` runner is generated
   at build time from naming conventions in this file to avoid having to
   maintain duplicate lists of tests. This `.c` file `#include`s the header of
   the module under test, the headers of mocked dependencies, and `"unity.h"`
   for test assertions.
-- `tests/scoreboard/Makefile.am` : Automake definitions that specify all source
-  files for the test, header files, and link dependencies on the module and
-  mock libraries. A reference to a "runner" source file triggers the generation
-  of the runner code.
-- `tests/Makefile.am` : Lists every module in `SUBDIRS`.
-- `configure.ac` : Every `Makefile` (without the `.am` extension) _must_ be
-  mentioned in `AC_CONFIG_FILES`, including both `src/` and `tests/`.
 
 ## Module source files
 
@@ -137,23 +120,34 @@ Anything declared in a header file must have a doc comment. Style notes:
 - For global storage: one comment above. (But prefer non-exported global
   storage and exported accessor functions.)
 
-## Depending on other modules
+## module.cfg and dependencies
 
-A module can depend on another module like so:
+There are two kinds of module: a _library_ module and a _program_ module. The
+`module.cfg` file for a library module looks like this:
 
-- Declare the dependency's header file as a source file in `Makefile.am`. (See
-  below.)
-- `#include "module/module.h"` where appropriate.
+```ini
+[module]
+library = scoreboard
+```
 
-The `src/` directory is on the include path, so the `#include` path includes
-the module directory name. A module can offer more than one public header file.
-This fact would be documented in the module's `README.md` file.
+The `module.cfg` for a program module looks like this:
 
-Linkage occurs in the binary, i.e. the module that defines `main()`. The binary
-must link the module and all of its dependencies. In practice, the m65tool will
-link all modules, and test runners will link only the module under test and the
-mock libraries of its dependencies. Module dependencies must be documented
-manually in the module's `README.md` file.
+```ini
+[module]
+program = m65tool
+deps = scoreboard executor reporter
+```
+
+The `deps` definition is a space-delimited list of module names on which the
+module depends. Both library and program modules can have other modules as
+dependencies.
+
+Within the module source code, the module can include a dependency's header
+using the path relative to `src/`, so like:
+
+```c
+#include "executor/executor.h"
+```
 
 ## Module tests and mocks
 
@@ -200,7 +194,7 @@ The rest of the test function name should be:
 Each part is described in CamelCase and separated by underscores. As a matter
 of style, this is the only code that uses CamelCase names.
 
-After the Makefiles are set up (see below), to run all tests:
+After running `makemake.py` to generate `Makefile.am`, to run all tests:
 
 ```text
 make check
@@ -216,98 +210,34 @@ The runner programs are binary programs and can be used with a debugger. To
 build a specific test suite:
 
 ```text
-make -C tests/examplemod test_examplemod
+make tests/runners/test_examplemod
 ```
 
 To run its binary:
 
 ```text
-./tests/examplemod/test_examplemod
+./tests/runners/test_examplemod
 ```
 
-## Module Makefiles
+## Custom Makefile.am rules
 
-Each module subdirectory has a `Makefile.am` that builds the module to a
-"convenience library." This is a `.a` file marked as `noinst_` so that it does
-not get installed on the system, only linked to binaries. In
-`src/scoreboard/Makefile.am`:
+A module source directory can have an optional `module.mk` file containing
+custom definitions for `Makefile.am`. It is included in the `Makefile.am` just
+after the definitions for the module. For example, `module.mk` could extend
+these GNU Autotools list variables with customizations not supported directly
+by `makemake.py`:
 
-```makefile
-include ../module_common.mk
+- `lib{modname}_la_LIBADD` for library modules
+- `{modname}_LDADD` for program modules
+- `tests_runners_{suitename}_SOURCES`
+- `tests_runners_{suitename}_LDADD`
+- `tests_runners_{suitename}_CPPFLAGS`
 
-noinst_LIBRARIES = libscoreboard.a
-libscoreboard_a_SOURCES = \
-	scoreboard.c \
-	scoreboard.h \
-	priv1.c \
-	priv1.h \
-	../dependency/dependency.h
+The project can have an optional `project.mk` file in the root directory. This
+is included at the end of `Makefile.am`, and could be useful for defining
+custom rules and extending global list variables.
 
-check_LIBRARIES = libscoreboard_mock.a
-libscoreboard_mock_a_SOURCES = \
-	mock_scoreboard.c \
-	mock_scoreboard.h
-libscoreboard_mock_a_CPPFLAGS = $(MOCK_CPPFLAGS)
-
-CLEANFILES = mock_scoreboard.c mock_scoreboard.h
-```
-
-The dependency module is only mentioned by its header file. Source files
-internal to the dependency module must not be mentioned. Linkage is resolved in
-the binary module, such as in `src/m65tool/Makefile.am`:
-
-```makefile
-m65tool_LDADD = \
-	../scoreboard/libscoreboard.a \
-	../dependency/libdependency.a
-```
-
-The module's test directory also has a `Makefile.am`:
-
-```makefile
-check_PROGRAMS = test_scoreboard
-include ../test_common.mk
-
-test_scoreboard_SOURCES = \
-	./runners/runner_test_scoreboard.c \
-	test_scoreboard.c \
-	../../src/scoreboard/scoreboard.h \
-	../../src/dependency/mock_dependency.h \
-	$(CMOCK_SOURCES)
-test_scoreboard_LDADD = \
-	../../src/scoreboard/libscoreboard.a \
-	../../src/dependency/libdependency_mock.a
-test_scoreboard_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/dependency
-```
-
-- Use this pretty much verbatim, where `scoreboard` is the module under test
-  and `dependency` is an example of a dependency module.
-- Unit tests only test the behavior of the module. Calls to other modules
-  should be mocked using their `src/*/mock_*.h` header and
-  `src/*/lib*_mock.a` library. The test code generator produces these source
-  files based on the dependency module's header file.
-
-Add the source and test module subdirectories to `SUBDIRS` in both
-`src/Makefile.am` and `tests/Makefile.am`:
-
-```makefile
-SUBDIRS = \
-  dependency \
-  m65tool \
-  scoreboard
-```
-
-Finally, add the module's source `Makefile` and test `Makefile` (without the
-`.am` suffix) to `AC_CONFIG_FILES` in `configure.ac`:
-
-```makefile
-AC_CONFIG_FILES(
-  [Makefile]
-  [src/Makefile]
-  [src/scoreboard/Makefile]
-  [tests/scoreboard/Makefile]
-  ...
-)
-```
-
-Be sure to re-run `./configure` after making these changes.
+These files are inserted directly into the `Makefile.am`. They must contain
+valid Automake definitions. Note that while Automake can pass through some rule
+text directly to the generated Makefile, not all Makefile features are
+supported by Automake.

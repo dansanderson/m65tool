@@ -29,7 +29,7 @@
       "type": "shell",
       "group": "test",
       "command": "make",
-      "args": ["-C", "${fileDirname}", "${fileBasenameNoExtension}"],
+      "args": ["tests/runners/${fileBasenameNoExtension}"],
       "problemMatcher": "$gcc"
     }
   ]

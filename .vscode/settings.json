@@ -10,10 +10,8 @@
     "third-party/CMock/src",
     "third-party/CMock/vendor/unity/src"
   ],
-  "cmake.configureOnOpen": true,
-  "files.associations": {
-    "Makefile.am": "makefile",
-    "examplemod.h": "c"
-  },
-  "makefile.dryrunSwitches": ["--keep-going", "--print-directory"]
+  "makefile.dryrunSwitches": ["--keep-going", "--print-directory"],
+  "[python]": {
+    "editor.tabSize": 4
+  }
 }

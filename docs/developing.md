@@ -1,14 +1,29 @@
 # Developing m65tool
 
 These are instructions for developing m65tool. If you just want to build
-m65tool from source for yourself, you can download the source distribution. See
-README.md.
+m65tool from source for yourself, you can download the source distribution, and
+build it with any POSIX-compatible environment, including Linux, macOS, and
+Windows with [MinGW](https://www.mingw-w64.org/). See [README.md](../README.md).
 
 See also:
 
 - [Developer cheat sheet](dev_cheat_sheet.md)
 - [Modules](dev_modules.md)
 - [Style](dev_style.md)
+
+## Introduction
+
+m65tool is written in C, with development helper scripts in Python and Ruby.
+Build logic is managed with GNU Autotools and a simple module management
+system. Autotools can generate a source distribution that can be built in any
+POSIX-compliant environment without the need for Python or Ruby.
+
+The module management system is a single script, `scripts/makemake.py`. This
+tool expects the C code to be organized into modules, as documented by
+[dansanderson/c-autotools-template](https://github.com/dansanderson/c-autotools-template).
+Each module source directory contains a `module.cfg` file that declares the
+module type (library or program) and the module's dependencies. `makemake.py`
+generates rules for unit tests and mock dependencies.
 
 ## Prerequisites
 
@@ -18,64 +33,43 @@ Make sure you have the following support tools installed:
 - [GNU Autotools](https://www.gnu.org/software/automake/manual/html_node/index.html)
 - [Ruby](https://www.ruby-lang.org/en/) 2.x or later, for unit test code
   generation
+- [Python](https://www.python.org/) 3.x for the module management tools
 
-### Prerequisites on Linux
-
-Linux can usually get all dependencies via `apt-get`. Check your OS's software
-packaging system for details. On Ubuntu:
+On Linux, you can install these prerequisites with your system's package
+manager. For example, on Ubuntu:
 
 ```text
 sudo apt-get update
-sudo apt-get install build-essential autotools-dev autoconf ruby-full git clang-format
+sudo apt-get install build-essential autotools-dev autoconf ruby-full git clang-format python3.10
 ```
 
-It is possible to build the Windows binary from Linux, with additional
-libraries and alternate configuration options. See "Cross-compiling a Windows
-binary from Linux," below.
-
-### Prerequisites on macOS
-
-Mac users are strongly recommended to install [Homebrew](https://brew.sh/) to
-manage tool installation. Installing Homebrew also installs the XCode Command
-Line Tools, which provides a gcc-compatible C compiler and GNU Automake. Once
-installed, run the following command to install the remaining tools:
+On macOS, install [Homebrew](https://brew.sh/). Simply installing Homebrew also
+installs the XCode Command Line Tools, including a gcc-compatible C compiler
+and GNU Autotools. You can install additional tools like so:
 
 ```text
-brew install ruby git clang-format
+brew install ruby python git clang-format
 ```
 
-### Prerequisites on Windows
-
-Windows users must [install MSYS2](https://www.msys2.org/#installation).
-
-From the MSYS terminal, install the dependencies, including the MinGW toolchain:
+On Windows, install [MinGW MSYS2](https://www.msys2.org/#installation). The
+instructions describe how to open an MSYS terminal and run the `pacman` package
+manager. You can use `pacman` to install the MinGW toolchain and other tools:
 
 ```text
 pacman -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb clang autotools git
 ```
 
-**Important:** Close the **MSYS2 MSYS** terminal, then open an **MSYS2 MinGW**
-terminal. Building in the MSYS terminal works, but produces an `.exe` that only
-works in the MSYS terminal or with msys-2.0.dll installed. Building in the
-MinGW terminal produces a Windows-native `.exe` that runs at any command prompt
-without MSYS2 installed. You can tell you're in the MinGW terminal if `which gcc` returns `/mingw64/bin/gcc`:
-
-```text
-$ which gcc
-/mingw64/bin/gcc
-```
-
-(If you really want an MSYS version of the tool, edit `configure.ac` to remove
-the error message for `msys*` and add `msys*` to the check for Windows host
-values: `cygwin*|mingw*|msys*)`. Then use the following instructions in an
-MSYS2 MSYS terminal.)
+**Note:** Take care to build in a MinGW shell, and not an "MSYS" shell. From the MSYS
+shell, builds will require the MSYS DLL to run. A build in the MinGW shell
+produces a standalone `.exe` program. Because I always want a MinGW standalone
+binary, this template's `configure.ac` will abort if built under MSYS.
 
 The MSYS2 user home directory is under `C:\msys64\home\{user}` (where `{user}`
 is your username). If you clone the repo into an `m65tool` subdirectory, the
 final `.exe` will be:
 
 ```text
-C:\msys64\home\{user}\m65tool\src\m65tool\m65tool.exe
+C:\msys64\home\{user}\m65tool\m65tool.exe
 ```
 
 ## Checking out and building from the repo
@@ -95,15 +89,15 @@ autoreconf --install
 ./configure
 ```
 
-Use `make` to build the tool. The `m65tool` binary appears in the
-`./src/m65tool` directory.
+Use `make` to build the tool. The `m65tool` program (or `m65tool.exe` on
+Windows) is created in the project root directory.
 
 ```text
 make
 ```
 
 Use `make check` to build and run all unit tests and report a failure summary.
-This builds a standalone binary for each module, such as `./tests/
+This builds a standalone binary for each module, such as `./tests/`.
 
 ```text
 make check
@@ -114,12 +108,6 @@ Use `make distcheck` to run all tests and produce the source distribution.
 ```text
 make distcheck
 ```
-
-It is usually sufficient to run just `make` and `make check` during
-development. If you make changes to `configure.ac` or `Makefile.am`, running
-`make` _may or may not_ regenerate the appropriate files. If it seems like a
-change to a `Makefile.am` is not having an effect, re-run
-`autoreconf --install` and `./configure`.
 
 ## Cross-compiling a Windows binary from Linux
 
@@ -141,19 +129,61 @@ Tell `./configure` the builder OS is Linux and the host (target) OS is Windows:
 ./configure --build=x86_64-pc-linux-gnu --host=x86_64-w64-mingw32
 ```
 
-Run `make` to produce `./src/m65tool/m65tool.exe`.
+Run `make` to produce `m65tool.exe`.
 
 ```text
 make
 ```
 
+## Updating Makefile.am with makemake.py
+
+This project uses a tool called `makemake.py` to generate the `Makefile.am`
+file that is processed by `./configure`. It is customary to commit this file to
+the source repo.
+
+To update `Makefile.am`:
+
+```text
+python3 scripts/makemake.py
+```
+
+This tool calculates `Makefile.am` from the module layout in `src/` and
+`tests/`, from the `module.cfg` file (required) and `module.mk` (optional) in
+each module source directory, and from an optional `project.mk` file in the
+project root directory.
+
+You must re-run `makemake.py` whenever a source file is created or deleted, and
+whenever a `module.cfg`, `module.mk`, or `project.mk` file is changed. You
+typically also want to run `./configure` immediately afterward.
+
+You usually don't need to re-run this tool under other circumstances, but it
+doesn't hurt to do so.
+
+## Creating new modules
+
+The files required for a new module are intentionally minimal. Nevertheless,
+there's a tool to make it even easier to generate the starter files for a new
+module: `scripts/newmod.py`
+
+To generate a new internal library module:
+
+```text
+python3 scripts/newmod.py {modname}
+```
+
+To generate a new program module:
+
+```text
+python3 scripts/newmod.py --program {modname}
+```
+
 ## Wrangling the intermediate files
 
-You probably noticed that `autoreconf`, `./configure`, `make`, and `make check`
-produce dozens of intermediate files strewn about all of the source
-directories. It is usually safe to ignore them. Git does: all intermediate
-files are mentioned in `.gitignore`, so they don't appear as changed and won't
-be committed to the repo.
+`autoreconf`, `./configure`, `make`, and `make check` produce dozens of
+intermediate files strewn about all of the source directories. It is usually
+safe to ignore them. Git does: all intermediate files are mentioned in
+`.gitignore`, so they don't appear as changed and won't be committed to the
+repo.
 
 There are cleaning targets included by Autotools:
 
@@ -164,45 +194,22 @@ There are cleaning targets included by Autotools:
   `./configure` before you can `make` again.
 
 I found it was important to fully restore the project directory to its Git repo
-state to reset artifacts from erroneous Makefile rules. To make this easier, I
-have a script, `superclean.py`, in the root directory that deletes all files
-explicitly ignored by Git, and deletes empty directories. You must re-run
+state to reset artifacts from erroneous Makefile rules. To make this easier,
+the tool `scripts/superclean.py` deletes all files explicitly ignored by Git,
+and deletes empty directories. You must re-run
 `autoreconf --install && ./configure && make` to build again.
+
+To see what files will be deleted without actually deleting:
 
 ```text
 python3 superclean.py --dry-run
+```
 
+To delete all temporary files:
+
+```text
 python3 superclean.py
-autoreconf --install
-./configure
-make
 ```
-
-There's a make target for `superclean.py`. Note that this will not function if
-there is a syntax error in the Makefile, which might be the condition you're
-attempting to clean up by running `superclean.py` in the first place.
-
-```text
-make superclean
-```
-
-## Building to a different directory
-
-This behavior of creating build files in the source tree is the default for GNU
-Autotools when run from the project root directory. You can generate the build
-tree in another directory, like so:
-
-```text
-mkdir build
-cd build
-../configure
-make
-make check
-```
-
-Note that `autoreconf --install` and `../configure` still emit intermediate
-build artifacts in the source tree. This only relocates the output of `make`
-targets (assuming the `make` rules are written correctly).
 
 ## Quieter builds
 
@@ -255,7 +262,7 @@ To disable debugging symbols, enable more optimizations, and also set a
 [This SO answer](https://stackoverflow.com/a/4680578/453278) recommends against
 adding these definitions to Makefiles.
 
-## scripts/build.py
+## Easier building with scripts/build.py
 
 I wrote a build invocation script so I wouldn't forget some of these options.
 It's purposefully _not_ a Makefile rule because it provides standard options to
@@ -276,12 +283,6 @@ This re-runs all build steps, then creates a symbolic link to the `m65tool` or
 
 You can run `make` after this to re-build with the same options. Re-run
 `build.py` to re-run `./configure` with new options.
-
-## Adding files to the distribution
-
-`EXTRA_DIST` in `Makefile.am` lists all files that aren't build dependencies
-that should be added to the final distribution. This should include every file
-in `docs/`, for example.
 
 ## Producing the source distribution
 

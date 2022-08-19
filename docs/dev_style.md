@@ -13,8 +13,8 @@ Code style is based on the [Google C/C++ Style
 Guide](https://google.github.io/styleguide/cppguide.html). It is enforced by
 `clang-format`. There's a `make format` target that runs it.
 
-- Indents are two spaces. No tabs, unless in `Makefile.am` where tabs are
-  significant.
+- Indents are two spaces. No tabs, unless in Makefile rules (in `module.mk` or
+  `project.mk`) where tabs are significant.
 
 - Ordering of `#include`. (clang-format will re-order correctly.)
 
@@ -44,9 +44,10 @@ Naming:
 - Function and global variable names use `snake_case`. Exceptions are Unity Test
   function names.
 
-- Constant variable names use `UPPER_SNAKE_CASE`.
+- Global `const` variables initialized with literals have names using
+  `UPPER_SNAKE_CASE`.
 
-- Inner command names use all lowercase letters, with no delimiters between
+- m65tool command names use all lowercase letters, with no delimiters between
   words. A command name should be a single word or abbreviation, if possible.
 
 - Command-line argument names are all lowercase and use hyphen delimiters.

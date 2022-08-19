@@ -1,24 +1,32 @@
 # m65tool developer cheat sheet
 
-## make targets
+## Build commands
 
 ```text
 autoreconf --install
+
+python3 scripts/makemake.py
 
 ./configure
 ./configure --enable-silent-rules
 
 make
-make distcheck
 
 make check
-make check TESTS='tests/scoreboard/runner_test_scoreboard'
+make check TESTS='tests/runners/runner_test_scoreboard'
+
+make distcheck
 
 make clean
 make distclean
-make superclean
+python3 scripts/superclean.py
 
-make format
+python3 scripts/newmod.py {modname}
+python3 scripts/newmod.py --program {modname}
+
+python3 scripts/build.py
+python3 scripts/build.py --debugbuild
+python3 scripts/build.py --windows
 ```
 
 ## VSCode

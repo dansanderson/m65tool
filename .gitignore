@@ -1,19 +1,7 @@
 # Built binaries
-/src/m65tool/m65tool
-/tests/examplemod/test_examplemod
-
-# Generated files
-test-suite.log
-libtool
-config.h
-m65tool-0.1.tar.gz
-/build
-/bin
-test_*.log
-test_*.trs
-/tests/*/runners
-/src/*/mock_*.c
-/src/*/mock_*.h
+/m65tool
+/m65tool-0.1.tar.gz
+/m65tool-0.1
 
 # VSCode
 .vscode/*.log
@@ -21,7 +9,23 @@ test_*.trs
 # Backup files (sometimes by autoreconf)
 *~
 
-## Python
+# Build
+.deps
+.libs
+libtool
+*.la
+*.a
+*.o
+*.lo
+.dirstamp
+/config.h
+/tests/mocks
+/tests/runners
+/tests/test_*.log
+/tests/test_*.trs
+test-suite.log
+
+# Python
 .mypy_cache
 __pycache__
 

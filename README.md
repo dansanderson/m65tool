@@ -50,10 +50,10 @@ emulator](https://github.lgb.hu/xemu/) behaving as if it were a MEGA65.
 
 ## Who is doing this?
 
-Oliver Graf (lydon) maintains the
-[mega65-tools](https://github.com/MEGA65/mega65-tools) repo. Gurce Isikyildiz
-(Gurce) wrote and maintains [m65dbg](https://github.com/MEGA65/m65dbg). Dan
-Sanderson (dddaaannn) is driving the frontend rewrite.
+Dan Sanderson (dddaaannn) is driving the frontend rewrite. Oliver Graf (lydon)
+maintains the [mega65-tools](https://github.com/MEGA65/mega65-tools) repo.
+Gurce Isikyildiz (Gurce) wrote and maintains
+[m65dbg](https://github.com/MEGA65/m65dbg).
 
 ## Why is it a separate tool?
 
