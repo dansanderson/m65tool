@@ -400,3 +400,12 @@ void test_StrbufConcatenate_InvalidInputStrbuf_Fails(void) {
   strbuf buf = strbuf_create(64);
   TEST_ASSERT_FALSE(strbuf_concatenate(&buf, STRBUF_INVALID));
 }
+
+void test_StrbufConcatenatePrintf_Succeeds(void) {
+  strbuf buf = strbuf_create(16);
+  TEST_ASSERT_TRUE(strbuf_concatenate_printf(&buf, "This is a test: %d (%s)",
+                                             123, "message"));
+  TEST_ASSERT_EQUAL_MEMORY("This is a test: 123 (message)", buf.value, 29);
+  TEST_ASSERT_EQUAL(29, buf.length);
+  TEST_ASSERT_EQUAL(32, buf.bufsize);
+}

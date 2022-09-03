@@ -305,9 +305,9 @@ strbuf strbuf_duplicate(strbuf bufval);
  * The generic macro strbuf_concatenate(destbuf, v) accepts a C string, a str,
  * or a strbuf as v.
  *
- * @param destbuf Ptr to the string buffer.
- * @param cstr The null-terminated C string to concatenate.
- * @return true on success.
+ * @param destbuf Ptr to the string buffer
+ * @param cstr The null-terminated C string to concatenate
+ * @return true on success
  */
 bool strbuf_concatenate_cstr(strbuf *destbuf, const char *cstr);
 
@@ -324,5 +324,18 @@ bool strbuf_concatenate_str(strbuf *destbuf, str strval);
  * See `strbuf_concatenate_cstr`.
  */
 bool strbuf_concatenate_strbuf(strbuf *destbuf, strbuf sourcebuf);
+
+/**
+ * @brief Append string-formatted data to the strbuf.
+ *
+ * This is similar to `sprintf`, with protection against overflow and no
+ * truncation.
+ *
+ * @param destbuf Ptr to the string buffer
+ * @param fmt The printf format string
+ * @param ... Arguments to the format string
+ * @return true on success
+ */
+bool strbuf_concatenate_printf(strbuf *destbuf, const char *fmt, ...);
 
 #endif

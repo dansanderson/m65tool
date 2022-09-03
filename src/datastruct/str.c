@@ -1,6 +1,8 @@
 #include "str.h"
 
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -177,15 +179,20 @@ strbuf strbuf_duplicate(strbuf bufval) {
   return newbuf;
 }
 
+static bool grow_strbuf(strbuf *buf) {
+  size_t newsize = buf->bufsize * 2;
+  void *newmem = realloc(buf->value, newsize);
+  if (!newmem) return false;
+  buf->value = newmem;
+  buf->bufsize = newsize;
+  return true;
+}
+
 static bool do_strbuf_concatenate(strbuf *destbuf, const char *cstr,
                                   size_t length) {
-  if (!strbuf_is_valid(*destbuf)) return false;
-  if (destbuf->length + length > destbuf->bufsize) {
-    size_t newsize = destbuf->bufsize * 2;
-    void *newmem = realloc(destbuf->value, newsize);
-    if (!newmem) return false;
-    destbuf->value = newmem;
-    destbuf->bufsize = newsize;
+  if (!destbuf || !strbuf_is_valid(*destbuf)) return false;
+  while (destbuf->length + length > destbuf->bufsize) {
+    if (!grow_strbuf(destbuf)) return false;
   }
   for (int i = 0; i < length; i++) {
     destbuf->value[destbuf->length + i] = cstr[i];
@@ -207,4 +214,25 @@ bool strbuf_concatenate_str(strbuf *destbuf, str strval) {
 bool strbuf_concatenate_strbuf(strbuf *destbuf, strbuf sourcebuf) {
   if (!strbuf_is_valid(sourcebuf)) return false;
   return do_strbuf_concatenate(destbuf, sourcebuf.value, sourcebuf.length);
+}
+
+bool strbuf_concatenate_printf(strbuf *destbuf, const char *fmt, ...) {
+  va_list v;
+  size_t length;
+
+  if (!destbuf || !strbuf_is_valid(*destbuf) || !fmt) return false;
+
+  va_start(v, fmt);
+  length = vsnprintf(NULL, 0, fmt, v) + 1;
+  va_end(v);
+
+  while (destbuf->length + length > destbuf->bufsize) {
+    if (!grow_strbuf(destbuf)) return false;
+  }
+
+  va_start(v, fmt);
+  vsnprintf(destbuf->value + destbuf->length, length, fmt, v);
+  va_end(v);
+  destbuf->length += length - 1;
+  return true;
 }
