@@ -49,7 +49,9 @@ noinst_LTLIBRARIES += libdatastruct.la
 
 libdatastruct_la_SOURCES = \
     ./src/datastruct/datastruct.c \
-    ./src/datastruct/datastruct.h
+    ./src/datastruct/str.c \
+    ./src/datastruct/datastruct.h \
+    ./src/datastruct/str.h
 
 tests/mocks/mock_datastruct.c tests/mocks/mock_datastruct.h: ./src/datastruct/datastruct.h
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
@@ -60,7 +62,7 @@ tests/mocks/mock_datastruct.c tests/mocks/mock_datastruct.h: ./src/datastruct/da
 
 check_LTLIBRARIES += libdatastruct_mock.la
 
-libdatastruct_mock_la_SOURCES = tests/mocks/mock_datastruct.c
+nodist_libdatastruct_mock_la_SOURCES = tests/mocks/mock_datastruct.c
 
 libdatastruct_mock_la_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
@@ -73,22 +75,57 @@ CLEANFILES += \
     tests/mocks/mock_datastruct.c \
     tests/mocks/mock_datastruct.h
 
-BUILT_SOURCES += \
-    tests/mocks/mock_datastruct.c \
-    tests/mocks/mock_datastruct.h
+check_PROGRAMS += tests/runners/test_str
+
+tests/runners/runner_test_str.c: ./tests/datastruct/test_str.c
+	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	mkdir -p tests/runners
+	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
+
+tests_runners_test_str_SOURCES = \
+    tests/datastruct/test_str.c \
+    src/datastruct/datastruct.h
+
+nodist_tests_runners_test_str_SOURCES = tests/runners/runner_test_str.c
+
+tests/datastruct/runners_test_str-test_str.$(OBJEXT): \
+    tests/runners/runner_test_str.c \
+    libcmock.la \
+    libdatastruct.la
+
+CLEANFILES += tests/runners/runner_test_str.c
+
+tests_runners_test_str_LDADD = \
+    libcmock.la \
+    libdatastruct.la
+
+tests_runners_test_str_CPPFLAGS = \
+    $(CMOCK_CPPFLAGS) \
+    $(AM_CPPFLAGS)
 
 check_PROGRAMS += tests/runners/test_datastruct
 
 tests/runners/runner_test_datastruct.c: ./tests/datastruct/test_datastruct.c
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	mkdir -p tests/runners
 	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
 
 tests_runners_test_datastruct_SOURCES = \
-    tests/runners/runner_test_datastruct.c \
-    ./tests/datastruct/test_datastruct.c \
-    ./src/datastruct/datastruct.h
+    tests/datastruct/test_datastruct.c \
+    src/datastruct/datastruct.h
 
-tests_runners_test_datastruct_LDADD = libcmock.la libdatastruct.la
+nodist_tests_runners_test_datastruct_SOURCES = tests/runners/runner_test_datastruct.c
+
+tests/datastruct/runners_test_datastruct-test_datastruct.$(OBJEXT): \
+    tests/runners/runner_test_datastruct.c \
+    libcmock.la \
+    libdatastruct.la
+
+CLEANFILES += tests/runners/runner_test_datastruct.c
+
+tests_runners_test_datastruct_LDADD = \
+    libcmock.la \
+    libdatastruct.la
 
 tests_runners_test_datastruct_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
@@ -114,3 +151,22 @@ EXTRA_DIST = \
     third-party/CMock/vendor/unity/LICENSE.txt \
     third-party/CMock/vendor/unity/README.md \
     third-party/CMock/vendor/unity/auto
+
+# project.mk gets appended to Makefile.am by scripts/makemake.py. It can
+# contain additional Automake definitions, as well as Makefile rules in
+# Automake-compatible syntax.
+#
+# The generated Makefile.am creates these Automake list variables, which can be
+# extended by project.mk with the += operator:
+#
+# ACLOCAL_AMFLAGS +=
+# AM_CPPFLAGS +=
+# AM_LDFLAGS +=
+# bin_PROGRAMS +=
+# noinst_LTLIBRARIES +=
+# check_PROGRAMS +=
+# check_LTLIBRARIES +=
+# CLEANFILES +=
+# BUILT_SOURCES +=
+# TESTS +=
+# EXTRA_DIST +=
