@@ -157,9 +157,14 @@ str str_write_cstr_to_buf(str strval, char *buf, size_t bufsize);
  * This is a convenience for briefly needing a str as a null terminated C
  * string, such as for use with `printf`.
  *
- * This copies at most STR_CSTR_BUFSIZE-1 characters to the global buffer, and
- * always adds a null terminator. If you need a different sized buffer,
- * allocate your own, then use `str_write_cstr_to_buf`.
+ * This is only a little bit convenient! Take care not to use this more than
+ * once in a `printf` argument list. It will always return a pointer to the
+ * same buffer, so all printed values will be the last value written to the
+ * buffer.
+ *
+ * The global buffer is a fixed size. This will never overrun the global
+ * buffer, and always adds a null terminator. If you need a different sized
+ * buffer, allocate your own, then use `str_write_cstr_to_buf`.
  *
  * Each call overwrites the buffer. Be sure to use the value before the next
  * call to `str_to_cstr_buffer`.
@@ -257,7 +262,7 @@ str str_split_pop(str strval, str delim, str *part);
  * @param size A suggested initial buffer size, in characters.
  * @return strbuf The strbuf.
  */
-strbuf strbuf_create(unsigned int size);
+strbuf strbuf_create(size_t size);
 
 /**
  * @brief Destroys a strbuf.
@@ -283,12 +288,12 @@ bool strbuf_is_valid(strbuf bufval);
 strbuf strbuf_duplicate(strbuf bufval);
 
 // clang-format off
-#define strbuf_concatenate(destbuf, v) \
+#define strbuf_concatenate(destbufp, v) \
   _Generic((v), \
-    char: strbuf_concatenate_cstr, \
-    str: strbuf_concatenate_str \
+    char *: strbuf_concatenate_cstr, \
+    str: strbuf_concatenate_str, \
     strbuf: strbuf_concatenate_strbuf \
-    )((destbuf), (v))
+    )((destbufp), (v))
 // clang-format on
 
 /**

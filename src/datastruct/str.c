@@ -1,12 +1,15 @@
 #include "str.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const size_t STR_CSTR_BUFSIZE = 1024;
 static char STR_CSTR_BUFFER[STR_CSTR_BUFSIZE];
 static const str STR_INVALID =
     (str){.value = (void *)0, .length = 0, .allocated = false};
+static const strbuf STRBUF_INVALID =
+    (strbuf){.value = (void *)0, .length = 0, .bufsize = 0};
 
 str str_from_cstr(const char *cstr) {
   return (str){
@@ -145,6 +148,63 @@ str str_split_pop(str strval, str delim, str *part) {
   }
 }
 
+strbuf strbuf_create(size_t size) {
+  void *mem = malloc(size);
+  if (!mem) {
+    return STRBUF_INVALID;
+  }
+  return (strbuf){.value = mem, .length = 0, .bufsize = size};
+}
+
+void strbuf_destroy(strbuf *bufval) {
+  if (!strbuf_is_valid(*bufval)) return;
+  free((void *)bufval->value);
+  bufval->value = (void *)0;
+  bufval->length = 0;
+  bufval->bufsize = 0;
+}
+
 bool strbuf_is_valid(strbuf bufval) {
   return bufval.value != (void *)0;
+}
+
+strbuf strbuf_duplicate(strbuf bufval) {
+  if (!strbuf_is_valid(bufval)) return STRBUF_INVALID;
+  strbuf newbuf = strbuf_create(bufval.bufsize);
+  memcpy(newbuf.value, bufval.value, bufval.bufsize);
+  newbuf.length = bufval.length;
+  newbuf.bufsize = bufval.bufsize;
+  return newbuf;
+}
+
+static bool do_strbuf_concatenate(strbuf *destbuf, const char *cstr,
+                                  size_t length) {
+  if (!strbuf_is_valid(*destbuf)) return false;
+  if (destbuf->length + length > destbuf->bufsize) {
+    size_t newsize = destbuf->bufsize * 2;
+    void *newmem = realloc(destbuf->value, newsize);
+    if (!newmem) return false;
+    destbuf->value = newmem;
+    destbuf->bufsize = newsize;
+  }
+  for (int i = 0; i < length; i++) {
+    destbuf->value[destbuf->length + i] = cstr[i];
+  }
+  destbuf->length += length;
+  return true;
+}
+
+bool strbuf_concatenate_cstr(strbuf *destbuf, const char *cstr) {
+  if (!cstr) return false;
+  return do_strbuf_concatenate(destbuf, cstr, strlen(cstr));
+}
+
+bool strbuf_concatenate_str(strbuf *destbuf, str strval) {
+  if (!str_is_valid(strval)) return false;
+  return do_strbuf_concatenate(destbuf, strval.value, strval.length);
+}
+
+bool strbuf_concatenate_strbuf(strbuf *destbuf, strbuf sourcebuf) {
+  if (!strbuf_is_valid(sourcebuf)) return false;
+  return do_strbuf_concatenate(destbuf, sourcebuf.value, sourcebuf.length);
 }

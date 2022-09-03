@@ -3,6 +3,8 @@
 
 static str STR_INVALID =
     (str){.value = (void *)0, .length = 0, .allocated = false};
+static strbuf STRBUF_INVALID =
+    (strbuf){.value = (void *)0, .length = 0, .bufsize = 0};
 
 void setUp(void) {}
 
@@ -305,4 +307,96 @@ void test_StrSplitPop_ThreeDelim_PopsFourTimes(void) {
                       str_compare(str_from_cstr(expected[expected_i]), part));
     ++expected_i;
   }
+}
+
+void test_StrbufCreate_CreatesValid_DestroyMakesInvalid(void) {
+  strbuf val = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_is_valid(val));
+  strbuf_destroy(&val);
+  TEST_ASSERT_FALSE(strbuf_is_valid(val));
+}
+
+void test_StrbufDuplicate_Valid_CreatesValid(void) {
+  strbuf val = strbuf_create(64);
+  strbuf dup = strbuf_duplicate(val);
+  TEST_ASSERT_TRUE(strbuf_is_valid(dup));
+  strbuf_destroy(&val);
+  TEST_ASSERT_TRUE(strbuf_is_valid(dup));
+  strbuf_destroy(&dup);
+  TEST_ASSERT_FALSE(strbuf_is_valid(dup));
+}
+
+void test_StrbufConcatenate_Cstr(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
+  TEST_ASSERT_EQUAL_MEMORY("one", buf.value, 3);
+  TEST_ASSERT_EQUAL(3, buf.length);
+  TEST_ASSERT_EQUAL(64, buf.bufsize);
+
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "two"));
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "three"));
+  TEST_ASSERT_EQUAL_MEMORY("onetwothree", buf.value, 11);
+  TEST_ASSERT_EQUAL(11, buf.length);
+  TEST_ASSERT_EQUAL(64, buf.bufsize);
+}
+
+void test_StrbufConcatenate_Str(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("one")));
+  TEST_ASSERT_EQUAL_MEMORY("one", buf.value, 3);
+  TEST_ASSERT_EQUAL(3, buf.length);
+  TEST_ASSERT_EQUAL(64, buf.bufsize);
+
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("two")));
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("three")));
+  TEST_ASSERT_EQUAL_MEMORY("onetwothree", buf.value, 11);
+  TEST_ASSERT_EQUAL(11, buf.length);
+  TEST_ASSERT_EQUAL(64, buf.bufsize);
+}
+
+void test_StrbufConcatenate_Strbuf(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
+
+  strbuf bufval = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&bufval, "two"));
+
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, bufval));
+  TEST_ASSERT_EQUAL_MEMORY("onetwo", buf.value, 6);
+  TEST_ASSERT_EQUAL(6, buf.length);
+  TEST_ASSERT_EQUAL(64, buf.bufsize);
+}
+
+void test_StrbufConcatenate_Overflow_Grows(void) {
+  strbuf buf = strbuf_create(16);
+  TEST_ASSERT_EQUAL(0, buf.length);
+  TEST_ASSERT_EQUAL(16, buf.bufsize);
+  // (16 X)
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("XXXXXXXXXXXXXXXX")));
+  TEST_ASSERT_EQUAL(16, buf.length);
+  TEST_ASSERT_EQUAL(16, buf.bufsize);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("X")));
+  TEST_ASSERT_EQUAL(17, buf.length);
+  TEST_ASSERT_EQUAL(32, buf.bufsize);
+}
+
+void test_StrbufConcatenate_InvalidDestStrbuf_Fails(void) {
+  strbuf buf = strbuf_create(64);
+  strbuf_destroy(&buf);
+  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, "one"));
+}
+
+void test_StrbufConcatenate_NullCstr_Fails(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, (char *)0));
+}
+
+void test_StrbufConcatenate_InvalidStr_Fails(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, STR_INVALID));
+}
+
+void test_StrbufConcatenate_InvalidInputStrbuf_Fails(void) {
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, STRBUF_INVALID));
 }
