@@ -6,12 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memlist.h"
+
 static const size_t STR_CSTR_BUFSIZE = 1024;
 static char STR_CSTR_BUFFER[STR_CSTR_BUFSIZE];
-static const str STR_INVALID =
-    (str){.value = (void *)0, .length = 0, .allocated = false};
-static const strbuf STRBUF_INVALID =
-    (strbuf){.value = (void *)0, .length = 0, .bufsize = 0};
+static const str STR_INVALID = (str){0};
+static const strbuf STRBUF_INVALID = (strbuf){0};
 
 str str_from_cstr(const char *cstr) {
   return (str){
@@ -22,41 +22,41 @@ str str_from_bytes(const char *bytes, size_t length) {
   return (str){.value = bytes, .length = length, .allocated = false};
 }
 
-str str_duplicate_cstr(const char *cstr) {
+static str do_str_duplicate(const char *value, size_t length, memlist *mlp) {
+  char *mem;
+  memlist_handle mlh = (memlist_handle){0};
+  if (mlp != (void *)0) {
+    mlh = memlist_alloc(mlp, length);
+    if (!memlist_handle_is_valid(mlh)) return STR_INVALID;
+    mem = memlist_P(mlh);
+  } else {
+    mem = malloc(sizeof(char) * length);
+    if (!mem) return STR_INVALID;
+  }
+  memcpy(mem, value, length);
+  return (str){.value = mem, .length = length, .allocated = true, .mlh = mlh};
+}
+
+str str_duplicate_cstr(const char *cstr, memlist *mlp) {
   if (!cstr) {
     return STR_INVALID;
   }
   size_t length = strlen((const char *)cstr);
-  char *mem = malloc(length);
-  if (!mem) {
-    return STR_INVALID;
-  }
-  memcpy(mem, cstr, length);
-  return (str){.value = mem, .length = length, .allocated = true};
+  return do_str_duplicate(cstr, length, mlp);
 }
 
-str str_duplicate_str(str strval) {
+str str_duplicate_str(str strval, memlist *mlp) {
   if (!str_is_valid(strval)) {
     return STR_INVALID;
   }
-  char *mem = malloc(strval.length);
-  if (!mem) {
-    return STR_INVALID;
-  }
-  memcpy(mem, strval.value, strval.length);
-  return (str){.value = mem, .length = strval.length, .allocated = true};
+  return do_str_duplicate(strval.value, strval.length, mlp);
 }
 
-str str_duplicate_strbuf(strbuf bufval) {
+str str_duplicate_strbuf(strbuf bufval, memlist *mlp) {
   if (!strbuf_is_valid(bufval)) {
     return STR_INVALID;
   }
-  char *mem = malloc(bufval.length);
-  if (!mem) {
-    return STR_INVALID;
-  }
-  memcpy(mem, bufval.value, bufval.length);
-  return (str){.value = mem, .length = bufval.length, .allocated = true};
+  return do_str_duplicate(bufval.value, bufval.length, mlp);
 }
 
 void str_destroy(str *strp) {
@@ -64,7 +64,11 @@ void str_destroy(str *strp) {
     return;
   }
   if (strp->allocated) {
-    free((void *)strp->value);
+    if (memlist_handle_is_valid(strp->mlh)) {
+      memlist_free_one(strp->mlh);
+    } else {
+      free((void *)strp->value);
+    }
     strp->allocated = false;
   }
   strp->value = (void *)0;
@@ -151,22 +155,38 @@ str str_split_pop(str strval, str delim, str *part) {
 }
 
 strbuf strbuf_create(size_t size) {
-  void *mem = malloc(size);
+  char *mem = malloc(sizeof(char) * size);
   if (!mem) {
     return STRBUF_INVALID;
   }
   return (strbuf){.value = mem, .length = 0, .bufsize = size};
 }
 
-void strbuf_destroy(strbuf *bufval) {
-  if (!strbuf_is_valid(*bufval)) return;
-  free((void *)bufval->value);
-  bufval->value = (void *)0;
-  bufval->length = 0;
-  bufval->bufsize = 0;
+strbuf strbuf_create_to_memlist(size_t size, memlist *mlp) {
+  memlist_handle mlh = memlist_alloc(mlp, sizeof(char) * size);
+  if (!memlist_handle_is_valid(mlh)) return STRBUF_INVALID;
+  return (strbuf){
+      .value = memlist_P(mlh), .length = 0, .bufsize = size, .mlh = mlh};
+}
+
+void strbuf_destroy(strbuf *bufvalp) {
+  if (!strbuf_is_valid(*bufvalp)) return;
+  if (bufvalp->mlh.mlp) {
+    // (Test the memlist pointer, not handle validity, to know if this was
+    // created with a memlist. Handle goes "invalid" when freed.)
+    memlist_free_one(bufvalp->mlh);
+  } else {
+    free((void *)bufvalp->value);
+  }
+  bufvalp->value = (void *)0;
+  bufvalp->length = 0;
+  bufvalp->bufsize = 0;
 }
 
 bool strbuf_is_valid(strbuf bufval) {
+  if (bufval.mlh.mlp) {
+    return memlist_handle_is_valid(bufval.mlh);
+  }
   return bufval.value != (void *)0;
 }
 
@@ -181,11 +201,9 @@ strbuf strbuf_duplicate(strbuf bufval) {
 
 static bool grow_strbuf(strbuf *buf) {
   size_t newsize = buf->bufsize * 2;
-  void *newmem = realloc(buf->value, newsize);
-  if (!newmem) return false;
-  buf->value = newmem;
+  buf->value = realloc(buf->value, newsize);
   buf->bufsize = newsize;
-  return true;
+  return (!!buf->value);
 }
 
 static bool do_strbuf_concatenate(strbuf *destbuf, const char *cstr,

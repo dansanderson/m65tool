@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "memlist.h"
+
 /**
  * @brief A string reference.
  *
@@ -31,6 +33,9 @@ typedef struct str {
 
   // Whether the memory can be freed by `str_destroy`
   bool allocated;
+
+  // A handle to a memlist entry, if allocated on a memlist.
+  memlist_handle mlh;
 } str;
 
 /**
@@ -52,6 +57,9 @@ typedef struct strbuf {
 
   // Size of the allocated buffer
   size_t bufsize;
+
+  // A handle to a memlist entry, if allocated on a memlist.
+  memlist_handle mlh;
 } strbuf;
 
 /**
@@ -60,8 +68,8 @@ typedef struct strbuf {
  * The resulting str refers to the C string memory. To copy the C string into
  * newly allocated memory, use a strbuf.
  *
- * @param cstr A null-terminated C string.
- * @return str A str populated with the C string.
+ * @param cstr A null-terminated C string
+ * @return str A str populated with the C string
  */
 str str_from_cstr(const char *cstr);
 
@@ -74,9 +82,9 @@ str str_from_cstr(const char *cstr);
  * The resulting str refers to the bytes memory. To copy the bytes into newly
  * allocated memory, use a strbuf.
  *
- * @param bytes The first address of the bytes.
- * @param length The number of bytes to include in the str.
- * @return str A str populated with the bytes.
+ * @param bytes The first address of the bytes
+ * @param length The number of bytes to include in the str
+ * @return str A str populated with the bytes
  */
 str str_from_bytes(const char *bytes, size_t length);
 
@@ -86,21 +94,30 @@ str str_from_bytes(const char *bytes, size_t length);
     char *: str_duplicate_cstr, \
     str: str_duplicate_str, \
     strbuf: str_duplicate_strbuf \
-  )(v)
+  )((v), (void *)0)
+
+#define str_duplicate_to_memlist(v, mlp) \
+  _Generic((v), \
+    char *: str_duplicate_cstr, \
+    str: str_duplicate_str, \
+    strbuf: str_duplicate_strbuf \
+  )((v), (mlp))
 // clang-format on
 
 /**
  * @brief Allocates memory and copies a null-terminated C string.
  *
+ * Prefer `str_duplicate(V)` or `str_duplicate_to_memlist(V, memlist *)` macros
+ * over calling directly. These macros accepts a C string, a str, or a strbuf
+ * for V.
+ *
  * Call `str_destroy` to deallocate.
  *
- * The generic macro str_duplicate(v) accepts a C string, a str, or a strbuf as
- * v.
- *
  * @param strval The str value to duplicate
+ * @param mlp Ptr to a memlist for allocation, or (void *)0 to use malloc
  * @return str A str of the duplicate
  */
-str str_duplicate_cstr(const char *cstr);
+str str_duplicate_cstr(const char *cstr, memlist *mlp);
 
 /**
  * @brief Allocates memory and copies a str value.
@@ -108,9 +125,10 @@ str str_duplicate_cstr(const char *cstr);
  * See `str_duplicate_cstr`.
  *
  * @param strval The str value to duplicate
+ * @param mlp Ptr to a memlist for allocation, or (void *)0 to use malloc
  * @return str A str of the duplicate
  */
-str str_duplicate_str(str strval);
+str str_duplicate_str(str strval, memlist *mlp);
 
 /**
  * @brief Allocates memory and copies a strbuf value to a str.
@@ -118,9 +136,10 @@ str str_duplicate_str(str strval);
  * See `str_duplicate_cstr`.
  *
  * @param bufval The strbuf to duplicate
+ * @param mlp Ptr to a memlist for allocation, or (void *)0 to use malloc
  * @return str A str of the duplicate
  */
-str str_duplicate_strbuf(strbuf bufval);
+str str_duplicate_strbuf(strbuf bufval, memlist *mlp);
 
 /**
  * @brief Invalidate and deallocate a str, as appropriate.
@@ -144,10 +163,10 @@ void str_destroy(str *strp);
  * This returns a new str describing the data written to the buffer. If the
  * strval argument is invalid, so is this return value.
  *
- * @param strval The str whose data to copy.
- * @param buf Ptr to the first position to write.
- * @param bufsize The maximum number of bytes to write.
- * @return str A str of the copied string.
+ * @param strval The str whose data to copy
+ * @param buf Ptr to the first position to write
+ * @param bufsize The maximum number of bytes to write
+ * @return str A str of the copied string
  */
 str str_write_cstr_to_buf(str strval, char *buf, size_t bufsize);
 
@@ -169,28 +188,28 @@ str str_write_cstr_to_buf(str strval, char *buf, size_t bufsize);
  * Each call overwrites the buffer. Be sure to use the value before the next
  * call to `str_to_cstr_buffer`.
  *
- * @param strval The str to copy.
- * @return char* The null-terminated string in the global buffer.
+ * @param strval The str to copy
+ * @return char* The null-terminated string in the global buffer
  */
 char *str_cstr(str strval);
 
 /**
- * @return true if the str is valid.
+ * @return true if the str is valid
  */
 bool str_is_valid(str strval);
 
 /**
- * @return size_t The length of the str.
+ * @return size_t The length of the str
  */
 size_t str_length(str strval);
 
 /**
  * @brief Finds the left-most occurrence of a substring in a string.
  *
- * @param strval The str to be searched.
- * @param substring The substring to locate inside str.
+ * @param strval The str to be searched
+ * @param substring The substring to locate inside str
  * @return int The character index of the located occurrence of
- *   substring, or -1 if not found.
+ *   substring, or -1 if not found
  */
 int str_find(str strval, str substring);
 
@@ -246,9 +265,9 @@ int str_compare(str first, str second);
  *   Found: 'two'
  *   Found: 'three'
  *
- * @param strval The str to split.
- * @param delim The delimiter, as a str.
- * @param[out] part The str up to the delimiter.
+ * @param strval The str to split
+ * @param delim The delimiter, as a str
+ * @param[out] part The str up to the delimiter
  * @return str The str that starts after the delimiter to the end of strval
  */
 str str_split_pop(str strval, str delim, str *part);
@@ -259,20 +278,32 @@ str str_split_pop(str strval, str delim, str *part);
  * Use `strbuf_is_valid` to confirm that memory was allocated correctly. strbuf
  * functions will fail gracefully if a strbuf is invalid.
  *
- * @param size A suggested initial buffer size, in characters.
- * @return strbuf The strbuf.
+ * @param size A suggested initial buffer size, in characters
+ * @return strbuf The strbuf
  */
 strbuf strbuf_create(size_t size);
 
 /**
- * @brief Destroys a strbuf.
+ * @brief Creates a strbuf.
  *
- * @param bufval Ptr to the strbuf to destroy.
+ * Use `strbuf_is_valid` to confirm that memory was allocated correctly. strbuf
+ * functions will fail gracefully if a strbuf is invalid.
+ *
+ * @param size A suggested initial buffer size, in characters
+ * @param mlp Ptr to a memlist for allocation
+ * @return strbuf The strbuf
  */
-void strbuf_destroy(strbuf *bufval);
+strbuf strbuf_create_to_memlist(size_t size, memlist *mlp);
 
 /**
- * @return true if the strbuf is valid.
+ * @brief Destroys a strbuf.
+ *
+ * @param bufval Ptr to the strbuf to destroy
+ */
+void strbuf_destroy(strbuf *bufvalp);
+
+/**
+ * @return true if the strbuf is valid
  */
 bool strbuf_is_valid(strbuf bufval);
 
@@ -282,8 +313,8 @@ bool strbuf_is_valid(strbuf bufval);
  * The caller is responsible for calling `strbuf_destroy` on the result when no
  * longer needed.
  *
- * @param bufval The strbuf to duplicate.
- * @return strbuf The new strbuf.
+ * @param bufval The strbuf to duplicate
+ * @return strbuf The new strbuf
  */
 strbuf strbuf_duplicate(strbuf bufval);
 

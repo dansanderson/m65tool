@@ -2,3 +2,6 @@
 	path = third-party/CMock
 	url = https://github.com/ThrowTheSwitch/CMock
 	ignore = dirty
+[submodule "third-party/inih"]
+	path = third-party/inih
+	url = https://github.com/benhoyt/inih

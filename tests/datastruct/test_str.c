@@ -1,14 +1,20 @@
+#include "datastruct/memlist.h"
 #include "datastruct/str.h"
 #include "unity.h"
 
-static str STR_INVALID =
-    (str){.value = (void *)0, .length = 0, .allocated = false};
-static strbuf STRBUF_INVALID =
-    (strbuf){.value = (void *)0, .length = 0, .bufsize = 0};
+static str STR_INVALID = (str){0};
+static strbuf STRBUF_INVALID = (strbuf){0};
+static memlist MEMLIST_INVALID = (memlist){0};
 
-void setUp(void) {}
+memlist ml;
 
-void tearDown(void) {}
+void setUp(void) {
+  ml = memlist_create();
+}
+
+void tearDown(void) {
+  memlist_destroy(&ml);
+}
 
 void test_StrFromCstr_IsValid(void) {
   str val = str_from_cstr("Some string");
@@ -50,7 +56,12 @@ void test_StrDuplicate_Str_IsValidHasChars(void) {
 }
 
 void test_StrDuplicate_Strbuf_IsValidHasChars(void) {
-  // TODO
+  strbuf buf = strbuf_create(64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
+  str val = str_duplicate(buf);
+  TEST_ASSERT_TRUE(str_is_valid(val));
+  TEST_ASSERT_NOT_EQUAL(buf.value, val.value);
+  TEST_ASSERT_EQUAL_MEMORY(buf.value, val.value, 11);
 }
 
 void test_StrDuplicate_NullCStr_IsInvalid(void) {
@@ -65,7 +76,22 @@ void test_StrDuplicate_InvalidStr_IsInvalid(void) {
 }
 
 void test_StrDuplicate_InvalidStrbuf_IsInvalid(void) {
-  // TODO
+  str val = str_duplicate(STRBUF_INVALID);
+  TEST_ASSERT_FALSE(str_is_valid(val));
+}
+
+void test_StrDuplicateToMemlist_CstrValidMemlist_UsesMemlist(void) {
+  char cstr[] = "Some string";
+  str val = str_duplicate_to_memlist(cstr, &ml);
+  TEST_ASSERT_EQUAL(1, ml.next_index);
+  TEST_ASSERT_NOT_EQUAL(cstr, ml.ptrlist[0]);
+  TEST_ASSERT_EQUAL_MEMORY(cstr, ml.ptrlist[0], 11);
+}
+
+void test_StrDuplicateToMemlist_InvalidMemlist_IsInvalid(void) {
+  char cstr[] = "Some string";
+  str val = str_duplicate_to_memlist(cstr, &MEMLIST_INVALID);
+  TEST_ASSERT_FALSE(str_is_valid(val));
 }
 
 void test_StrDestroy_InvalidStr_RemainsInvalid(void) {

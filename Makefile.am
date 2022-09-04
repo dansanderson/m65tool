@@ -50,8 +50,10 @@ noinst_LTLIBRARIES += libdatastruct.la
 libdatastruct_la_SOURCES = \
     ./src/datastruct/datastruct.c \
     ./src/datastruct/str.c \
+    ./src/datastruct/memlist.h \
     ./src/datastruct/datastruct.h \
-    ./src/datastruct/str.h
+    ./src/datastruct/str.h \
+    ./src/datastruct/memlist.c
 
 tests/mocks/mock_datastruct.c tests/mocks/mock_datastruct.h: ./src/datastruct/datastruct.h
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
@@ -100,6 +102,34 @@ tests_runners_test_str_LDADD = \
     libdatastruct.la
 
 tests_runners_test_str_CPPFLAGS = \
+    $(CMOCK_CPPFLAGS) \
+    $(AM_CPPFLAGS)
+
+check_PROGRAMS += tests/runners/test_memlist
+
+tests/runners/runner_test_memlist.c: ./tests/datastruct/test_memlist.c
+	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	mkdir -p tests/runners
+	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
+
+tests_runners_test_memlist_SOURCES = \
+    tests/datastruct/test_memlist.c \
+    src/datastruct/datastruct.h
+
+nodist_tests_runners_test_memlist_SOURCES = tests/runners/runner_test_memlist.c
+
+tests/datastruct/runners_test_memlist-test_memlist.$(OBJEXT): \
+    tests/runners/runner_test_memlist.c \
+    libcmock.la \
+    libdatastruct.la
+
+CLEANFILES += tests/runners/runner_test_memlist.c
+
+tests_runners_test_memlist_LDADD = \
+    libcmock.la \
+    libdatastruct.la
+
+tests_runners_test_memlist_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
     $(AM_CPPFLAGS)
 
