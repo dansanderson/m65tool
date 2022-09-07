@@ -18,7 +18,8 @@ bool memlist_is_valid(memlist *mlp) {
 }
 
 void *memlist_P(memlist_handle mlh) {
-  if (mlh.id >= mlh.mlp->next_index) return (void *)0;
+  if (!memlist_is_valid(mlh.mlp) || mlh.id >= mlh.mlp->next_index)
+    return (void *)0;
   return mlh.mlp->ptrlist[mlh.id];
 }
 
@@ -74,7 +75,7 @@ void memlist_free_one(memlist_handle mlh) {
   }
 }
 
-void memlist_free_all(memlist *mlp) {
+void memlist_destroy(memlist *mlp) {
   if (!memlist_is_valid(mlp)) return;
   for (int i = 0; i < mlp->next_index; i++) {
     if (mlp->ptrlist[i]) {
@@ -82,11 +83,6 @@ void memlist_free_all(memlist *mlp) {
       mlp->ptrlist[i] = (void *)0;
     }
   }
-  mlp->next_index = 0;
-}
-
-void memlist_destroy(memlist *mlp) {
-  memlist_free_all(mlp);
   free(mlp->ptrlist);
   mlp->ptrlist = (void *)0;
 }

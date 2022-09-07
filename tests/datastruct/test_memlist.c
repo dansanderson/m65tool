@@ -66,14 +66,14 @@ void test_MemlistFreeOne_MakesHandlerInvalid(void) {
   TEST_ASSERT_FALSE(memlist_handle_is_valid(mlh));
 }
 
-void test_MemlistFreeAll_MakesHandlersInvalid(void) {
+void test_MemlistDestroy_MakesHandlersInvalid(void) {
   memlist_handle mlh1 = memlist_alloc(&ml, 128);
   TEST_ASSERT_TRUE(memlist_handle_is_valid(mlh1));
   memlist_handle mlh2 = memlist_alloc(&ml, 128);
   TEST_ASSERT_TRUE(memlist_handle_is_valid(mlh2));
   memlist_handle mlh3 = memlist_alloc(&ml, 128);
   TEST_ASSERT_TRUE(memlist_handle_is_valid(mlh3));
-  memlist_free_all(&ml);
+  memlist_destroy(&ml);
   TEST_ASSERT_FALSE(memlist_handle_is_valid(mlh1));
   TEST_ASSERT_FALSE(memlist_handle_is_valid(mlh2));
   TEST_ASSERT_FALSE(memlist_handle_is_valid(mlh3));

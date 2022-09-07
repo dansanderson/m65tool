@@ -201,7 +201,13 @@ strbuf strbuf_duplicate(strbuf bufval) {
 
 static bool grow_strbuf(strbuf *buf) {
   size_t newsize = buf->bufsize * 2;
-  buf->value = realloc(buf->value, newsize);
+
+  if (buf->mlh.mlp) {
+    memlist_realloc(buf->mlh, newsize);
+    buf->value = memlist_P(buf->mlh);
+  } else {
+    buf->value = realloc(buf->value, newsize);
+  }
   buf->bufsize = newsize;
   return (!!buf->value);
 }
