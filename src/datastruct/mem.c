@@ -17,6 +17,9 @@ const mem_allocator MEM_ALLOCATOR_PLAIN =
  * @brief Macro to disable SIGINT for a block.
  *
  * Usage: sigint_guard { ...statements... }
+ *
+ * Do not exit prematurely out of the block (return, goto). This will result in
+ * the SIGINT handler not getting restored correctly.
  */
 // This macro treats the statement block as a run-once for loop, storing the
 // current SIGINT handler and replacing it with SIG_IGN at the beginning of the
@@ -31,6 +34,19 @@ const mem_allocator MEM_ALLOCATOR_PLAIN =
        } guard = {signal(SIGINT, SIG_IGN), 0}; \
        !guard.i; (guard.i = 1, signal(SIGINT, guard.sigint_handler)))
 
+inline mem_handle mem_handle_from_ptr(void *ptr, size_t size) {
+  return (mem_handle){
+      .allocator = MEM_NOT_ALLOCATED, .info.plain_info.ptr = ptr, .size = size};
+}
+
+/**
+ * @returns a `mem_allocator` that uses a given memtbl.
+ */
+inline mem_allocator mem_allocator_memtbl(memtbl_handle mth) {
+  return (mem_allocator){.allocator_type = MEM_ALLOCATOR_TYPE_MEMTBL,
+                         .info.memtbl_info.handle = mth};
+}
+
 mem_handle mem_alloc(mem_allocator ma, size_t size) {
   if (ma.allocator_type == MEM_ALLOCATOR_TYPE_INVALID) return (mem_handle){0};
   switch (ma.allocator_type) {
@@ -39,12 +55,17 @@ mem_handle mem_alloc(mem_allocator ma, size_t size) {
       memtbl *mtp = mem_p(ma.info.memtbl_info.handle);
 
       memtbl_id id;
+      bool set_result = false;
       sigint_guard {
         void *ptr = malloc(size);
+        mem_handle internal_hdl = (mem_handle){.allocator = MEM_ALLOCATOR_PLAIN,
+                                               .info.plain_info.ptr = ptr,
+                                               .size = size};
         id = mtp->next_id;
-        map_set(mtp->mem_map_handle, id, ptr);
+        set_result = map_set(mtp->mem_map_handle, id, internal_hdl);
         mtp->next_id++;
       }
+      if (!set_result) return (mem_handle){0};
 
       return (mem_handle){.allocator = MEM_ALLOCATOR_TYPE_MEMTBL,
                           .info.memtbl_info.id = id,
@@ -76,13 +97,17 @@ mem_handle mem_realloc(mem_handle handle, size_t size) {
       if (!memtbl_is_valid(handle.allocator.info.memtbl_info.handle)) return;
       memtbl *mtp = mem_p(handle.allocator.info.memtbl_info.handle);
 
+      bool set_result = false;
       sigint_guard {
-        void *origptr =
+        mem_handle internal_hdl =
             map_get(mtp->mem_map_handle, handle.info.memtbl_info.id);
-        void *ptr = realloc(origptr, size);
-        if (!map_set(mtp->mem_map_handle, handle.info.memtbl_info.id, ptr))
-          return (mem_handle){0};
+        void *ptr = realloc(mem_p(internal_hdl), size);
+        internal_hdl.info.plain_info.ptr = ptr;
+        set_result = map_set(mtp->mem_map_handle, handle.info.memtbl_info.id,
+                             internal_hdl);
       }
+      if (!set_result) return (mem_handle){0};
+
       handle.size = size;
       return handle;
 
@@ -140,12 +165,21 @@ void *mem_p(mem_handle handle) {
   }
 }
 
-mem_handle mem_duplicate(mem_handle handle) {
+inline bool mem_is_valid(mem_handle handle) {
+  return (!mem_p(handle));
+}
+
+mem_handle mem_duplicate_with_allocator(mem_allocator allocator,
+                                        mem_handle handle) {
   if (!mem_is_valid(handle)) return (mem_handle){0};
-  mem_handle new_handle = mem_alloc(handle.allocator, handle.size);
+  mem_handle new_handle = mem_alloc(allocator, handle.size);
   if (!mem_is_valid(new_handle)) return (mem_handle){0};
   memcpy(mem_p(new_handle), mem_p(handle), handle.size);
   return new_handle;
+}
+
+mem_handle mem_duplicate(mem_handle handle) {
+  return mem_duplicate_with_allocator(handle.allocator, handle);
 }
 
 memtbl_handle memtbl_create(mem_allocator ma) {

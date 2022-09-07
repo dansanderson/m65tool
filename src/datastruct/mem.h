@@ -98,21 +98,17 @@ typedef struct mem_handle {
     } plain_info;
   } info;
   size_t size;
-  bool allocated;
 } mem_handle;
 
-inline mem_handle mem_handle_from_ptr(void *ptr, size_t size) {
-  return (mem_handle){
-      .allocator = MEM_NOT_ALLOCATED, .info.plain_info.ptr = ptr, .size = size};
-}
+/**
+ * @return mem_handle for a region of memory
+ */
+inline mem_handle mem_handle_from_ptr(void *ptr, size_t size);
 
 /**
  * @returns a `mem_allocator` that uses a given memtbl.
  */
-inline mem_allocator mem_allocator_memtbl(memtbl_handle mth) {
-  return (mem_allocator){.allocator_type = MEM_ALLOCATOR_TYPE_MEMTBL,
-                         .info.memtbl_info.handle = mth};
-}
+inline mem_allocator mem_allocator_memtbl(memtbl_handle mth);
 
 /**
  * @brief Allocates memory.
@@ -181,17 +177,28 @@ void *mem_p(mem_handle handle);
  * @param handle The memory handle
  * @return true if the memory handle is valid
  */
-inline bool mem_is_valid(mem_handle handle) {
-  return (!mem_p(handle));
-}
+inline bool mem_is_valid(mem_handle handle);
 
 /**
  * @brief Duplicates a memory region.
+ *
+ * This uses the same allocator as the original handle. To use a different
+ * allocator for the duplicate, see `mem_duplicate_with_allocator`.
  *
  * @param handle The memory to duplicate
  * @return mem_handle The duplicated memory, or an invalid handle on failure
  */
 mem_handle mem_duplicate(mem_handle handle);
+
+/**
+ * @brief Duplicates a memory region using a given allocator.
+ *
+ * @param allocator The allocator to use for the duplicate
+ * @param handle The memory to duplicate
+ * @return mem_handle The duplicated memory, or an invalid handle on failure
+ */
+mem_handle mem_duplicate_with_allocator(mem_allocator allocator,
+                                        mem_handle handle);
 
 /**
  * @brief Creates a memory table.

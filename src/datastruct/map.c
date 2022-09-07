@@ -57,8 +57,8 @@ static uint32_t hash_str(str key) {
   // GCC optimized equivalent to hash *= 0x01000193 :
   hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
 
-  for (int i = 0; i < key.length; i++) {
-    c = key.value[i];
+  for (int i = 0; i < key.size; i++) {
+    c = ((char *)mem_p(key))[i];
     hash ^= (uint32_t)c;
     // GCC optimized equivalent to hash *= 0x01000193 :
     hash +=
@@ -195,7 +195,8 @@ static bool do_delete(map_handle mh, uint32_t key_hash) {
   (entries + pos)->value_handle = (mem_handle){0};
   --mp->entry_count;
 
-  if (mp->entry_count < (mp->table_size / 4)) {
+  if (mp->entry_count < (mp->table_size / 4) &&
+      mp->table_size > INITIAL_TABLE_SIZE) {
     return resize_entries_table(mh, false);
   }
   return true;
