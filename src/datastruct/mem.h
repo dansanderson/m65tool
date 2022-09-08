@@ -78,7 +78,7 @@ typedef struct mem_allocator {
   union {
     struct {
       memtbl_handle handle;
-    } memtbl_info;
+    } memtbl;
   } info;
 } mem_allocator;
 
@@ -88,14 +88,15 @@ extern const mem_allocator MEM_ALLOCATOR_PLAIN;
 
 // Handle for an allocation.
 typedef struct mem_handle {
-  mem_allocator allocator;
+  enum mem_allocator_type allocator_type;
   union {
     struct {
       memtbl_id id;
-    } memtbl_info;
+      memtbl *ptr;
+    } memtbl;
     struct {
       void *ptr;
-    } plain_info;
+    } plain;
   } info;
   size_t size;
 } mem_handle;

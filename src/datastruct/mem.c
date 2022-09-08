@@ -35,8 +35,9 @@ const mem_allocator MEM_ALLOCATOR_PLAIN =
        !guard.i; (guard.i = 1, signal(SIGINT, guard.sigint_handler)))
 
 inline mem_handle mem_handle_from_ptr(void *ptr, size_t size) {
-  return (mem_handle){
-      .allocator = MEM_NOT_ALLOCATED, .info.plain_info.ptr = ptr, .size = size};
+  return (mem_handle){.allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED,
+                      .info.plain.ptr = ptr,
+                      .size = size};
 }
 
 /**
@@ -44,37 +45,39 @@ inline mem_handle mem_handle_from_ptr(void *ptr, size_t size) {
  */
 inline mem_allocator mem_allocator_memtbl(memtbl_handle mth) {
   return (mem_allocator){.allocator_type = MEM_ALLOCATOR_TYPE_MEMTBL,
-                         .info.memtbl_info.handle = mth};
+                         .info.memtbl.handle = mth};
 }
 
 mem_handle mem_alloc(mem_allocator ma, size_t size) {
   if (ma.allocator_type == MEM_ALLOCATOR_TYPE_INVALID) return (mem_handle){0};
   switch (ma.allocator_type) {
     case MEM_ALLOCATOR_TYPE_MEMTBL:
-      if (!memtbl_is_valid(ma.info.memtbl_info.handle)) return (mem_handle){0};
-      memtbl *mtp = mem_p(ma.info.memtbl_info.handle);
+      if (!memtbl_is_valid(ma.info.memtbl.handle)) return (mem_handle){0};
+      memtbl *mtp = mem_p(ma.info.memtbl.handle);
 
       memtbl_id id;
       bool set_result = false;
       sigint_guard {
         void *ptr = malloc(size);
-        mem_handle internal_hdl = (mem_handle){.allocator = MEM_ALLOCATOR_PLAIN,
-                                               .info.plain_info.ptr = ptr,
-                                               .size = size};
+        mem_handle internal_hdl =
+            (mem_handle){.allocator_type = MEM_ALLOCATOR_TYPE_PLAIN,
+                         .info.plain.ptr = ptr,
+                         .size = size};
         id = mtp->next_id;
         set_result = map_set(mtp->mem_map_handle, id, internal_hdl);
         mtp->next_id++;
       }
       if (!set_result) return (mem_handle){0};
 
-      return (mem_handle){.allocator = MEM_ALLOCATOR_TYPE_MEMTBL,
-                          .info.memtbl_info.id = id,
+      return (mem_handle){.allocator_type = MEM_ALLOCATOR_TYPE_MEMTBL,
+                          .info.memtbl.ptr = mtp,
+                          .info.memtbl.id = id,
                           .size = size};
 
     case MEM_ALLOCATOR_TYPE_PLAIN:
       void *ptr = malloc(size);
-      return (mem_handle){.allocator = MEM_ALLOCATOR_PLAIN,
-                          .info.plain_info.ptr = ptr,
+      return (mem_handle){.allocator_type = MEM_ALLOCATOR_TYPE_PLAIN,
+                          .info.plain.ptr = ptr,
                           .size = size};
 
     default:
@@ -92,17 +95,16 @@ mem_handle mem_alloc_clear(mem_allocator ma, size_t size) {
 }
 
 mem_handle mem_realloc(mem_handle handle, size_t size) {
-  switch (handle.allocator.allocator_type) {
+  switch (handle.allocator_type) {
     case MEM_ALLOCATOR_TYPE_MEMTBL:
-      if (!memtbl_is_valid(handle.allocator.info.memtbl_info.handle)) return;
-      memtbl *mtp = mem_p(handle.allocator.info.memtbl_info.handle);
+      memtbl *mtp = handle.info.memtbl.ptr;
 
       bool set_result = false;
       sigint_guard {
         mem_handle internal_hdl =
             map_get(mtp->mem_map_handle, handle.info.memtbl_info.id);
         void *ptr = realloc(mem_p(internal_hdl), size);
-        internal_hdl.info.plain_info.ptr = ptr;
+        internal_hdl.info.plain.ptr = ptr;
         set_result = map_set(mtp->mem_map_handle, handle.info.memtbl_info.id,
                              internal_hdl);
       }
@@ -114,8 +116,8 @@ mem_handle mem_realloc(mem_handle handle, size_t size) {
     case MEM_ALLOCATOR_TYPE_PLAIN:
       void *origptr = mem_p(handle);
       void *ptr = realloc(origptr, size);
-      return (mem_handle){.allocator = MEM_ALLOCATOR_PLAIN,
-                          .info.plain_info.ptr = ptr,
+      return (mem_handle){.allocator_type = MEM_ALLOCATOR_TYPE_PLAIN,
+                          .info.plain.ptr = ptr,
                           .size = size};
 
     default:
@@ -128,10 +130,9 @@ void mem_free(mem_handle handle) {
   void *ptr = mem_p(handle);
   if (!ptr) return;
 
-  switch (handle.allocator.allocator_type) {
+  switch (handle.allocator_type) {
     case MEM_ALLOCATOR_TYPE_MEMTBL:
-      if (!memtbl_is_valid(handle.allocator.info.memtbl_info.handle)) return;
-      memtbl *mtp = mem_p(handle.allocator.info.memtbl_info.handle);
+      memtbl *mtp = handle.info.memtbl.ptr;
 
       sigint_guard {
         free(ptr);
@@ -149,16 +150,14 @@ void mem_free(mem_handle handle) {
 }
 
 void *mem_p(mem_handle handle) {
-  switch (handle.allocator.allocator_type) {
+  switch (handle.allocator_type) {
     case MEM_ALLOCATOR_TYPE_MEMTBL:
-      if (!memtbl_is_valid(handle.allocator.info.memtbl_info.handle))
-        return (void *)0;
-      memtbl *mtp = mem_p(handle.allocator.info.memtbl_info.handle);
+      memtbl *mtp = handle.info.memtbl.ptr;
       return map_get(mtp->mem_map_handle, handle.info.memtbl_info.id);
 
     case MEM_ALLOCATOR_TYPE_PLAIN:
     case MEM_ALLOCATOR_TYPE_NOT_ALLOCATED:
-      return handle.info.plain_info.ptr;
+      return handle.info.plain.ptr;
 
     default:
       return (void *)0;
@@ -179,7 +178,17 @@ mem_handle mem_duplicate_with_allocator(mem_allocator allocator,
 }
 
 mem_handle mem_duplicate(mem_handle handle) {
-  return mem_duplicate_with_allocator(handle.allocator, handle);
+  mem_allocator allocator =
+      (mem_allocator){.allocator_type = handle.allocator_type};
+  if (handle.allocator_type == MEM_ALLOCATOR_TYPE_MEMTBL) {
+    // Reconstructing the mem_allocator from a memtbl * drops information about
+    // how the memtbl itself was allocated. This is necessary because the
+    // handle being duplicated can't contain a complete handle to memtbl.
+    allocator.info.memtbl.handle =
+        mem_handle_from_ptr(handle.info.memtbl.ptr, sizeof(memtbl));
+  }
+
+  return mem_duplicate_with_allocator(allocator, handle);
 }
 
 memtbl_handle memtbl_create(mem_allocator ma) {

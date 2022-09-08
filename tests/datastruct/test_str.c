@@ -1,19 +1,18 @@
-#include "datastruct/memlist.h"
+#include "datastruct/mem.h"
 #include "datastruct/str.h"
 #include "unity.h"
 
 static str STR_INVALID = (str){0};
 static strbuf STRBUF_INVALID = (strbuf){0};
-static memlist MEMLIST_INVALID = (memlist){0};
 
-memlist ml;
+memtbl_handle mth;
 
 void setUp(void) {
-  ml = memlist_create();
+  mth = memtbl_create(MEM_ALLOCATOR_PLAIN);
 }
 
 void tearDown(void) {
-  memlist_destroy(&ml);
+  memtbl_destroy(mth);
 }
 
 void test_StrFromCstr_IsValid(void) {
@@ -26,22 +25,9 @@ void test_StrFromCstr_HasLength(void) {
   TEST_ASSERT_EQUAL(11, str_length(val));
 }
 
-void test_StrFromBytes_IsValid(void) {
-  char buf[] = "Some\0string";
-  str val = str_from_bytes(buf, sizeof(buf));
-  TEST_ASSERT_TRUE(str_is_valid(val));
-}
-
-void test_StrFromBytes_HasLength(void) {
-  char buf[] = "Some\0string";
-  str val = str_from_bytes(buf, sizeof(buf));
-  // 11 chars plus the C string null terminator is 12
-  TEST_ASSERT_EQUAL(12, str_length(val));
-}
-
 void test_StrDuplicate_CStr_IsValidHasChars(void) {
   char cstr[] = "Some string";
-  str val = str_duplicate(cstr);
+  str val = str_duplicate_with_allocator(cstr, MEM_ALLOCATOR_PLAIN);
   TEST_ASSERT_TRUE(str_is_valid(val));
   TEST_ASSERT_NOT_EQUAL(cstr, val.value);
   TEST_ASSERT_EQUAL_MEMORY(cstr, val.value, 11);
@@ -56,12 +42,14 @@ void test_StrDuplicate_Str_IsValidHasChars(void) {
 }
 
 void test_StrDuplicate_Strbuf_IsValidHasChars(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
-  str val = str_duplicate(buf);
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, "one"));
+  str val = str_duplicate(bufhdl);
+  char *bufdatap = mem_p(((strbuf *)mem_p(bufhdl))->data);
+  char *valp = mem_p(val);
   TEST_ASSERT_TRUE(str_is_valid(val));
-  TEST_ASSERT_NOT_EQUAL(buf.value, val.value);
-  TEST_ASSERT_EQUAL_MEMORY(buf.value, val.value, 11);
+  TEST_ASSERT_NOT_EQUAL(bufdatap, valp);
+  TEST_ASSERT_EQUAL_MEMORY(bufdatap, valp, 11);
 }
 
 void test_StrDuplicate_NullCStr_IsInvalid(void) {
@@ -77,20 +65,6 @@ void test_StrDuplicate_InvalidStr_IsInvalid(void) {
 
 void test_StrDuplicate_InvalidStrbuf_IsInvalid(void) {
   str val = str_duplicate(STRBUF_INVALID);
-  TEST_ASSERT_FALSE(str_is_valid(val));
-}
-
-void test_StrDuplicateToMemlist_CstrValidMemlist_UsesMemlist(void) {
-  char cstr[] = "Some string";
-  str val = str_duplicate_to_memlist(cstr, &ml);
-  TEST_ASSERT_EQUAL(1, ml.next_index);
-  TEST_ASSERT_NOT_EQUAL(cstr, ml.ptrlist[0]);
-  TEST_ASSERT_EQUAL_MEMORY(cstr, ml.ptrlist[0], 11);
-}
-
-void test_StrDuplicateToMemlist_InvalidMemlist_IsInvalid(void) {
-  char cstr[] = "Some string";
-  str val = str_duplicate_to_memlist(cstr, &MEMLIST_INVALID);
   TEST_ASSERT_FALSE(str_is_valid(val));
 }
 
@@ -336,102 +310,112 @@ void test_StrSplitPop_ThreeDelim_PopsFourTimes(void) {
 }
 
 void test_StrbufCreate_CreatesValid_DestroyMakesInvalid(void) {
-  strbuf val = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_is_valid(val));
-  strbuf_destroy(&val);
-  TEST_ASSERT_FALSE(strbuf_is_valid(val));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_is_valid(bufhdl));
+  strbuf_destroy(bufhdl);
+  TEST_ASSERT_FALSE(strbuf_is_valid(bufhdl));
 }
 
 void test_StrbufDuplicate_Valid_CreatesValid(void) {
-  strbuf val = strbuf_create(64);
-  strbuf dup = strbuf_duplicate(val);
-  TEST_ASSERT_TRUE(strbuf_is_valid(dup));
-  strbuf_destroy(&val);
-  TEST_ASSERT_TRUE(strbuf_is_valid(dup));
-  strbuf_destroy(&dup);
-  TEST_ASSERT_FALSE(strbuf_is_valid(dup));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  strbuf_handle duphdl = strbuf_duplicate(bufhdl);
+  TEST_ASSERT_TRUE(strbuf_is_valid(duphdl));
+  strbuf_destroy(bufhdl);
+  TEST_ASSERT_TRUE(strbuf_is_valid(duphdl));
+  strbuf_destroy(duphdl);
+  TEST_ASSERT_FALSE(strbuf_is_valid(duphdl));
 }
 
 void test_StrbufConcatenate_Cstr(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
-  TEST_ASSERT_EQUAL_MEMORY("one", buf.value, 3);
-  TEST_ASSERT_EQUAL(3, buf.length);
-  TEST_ASSERT_EQUAL(64, buf.bufsize);
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, "one"));
+  str result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("one", mem_p(result), 3);
+  TEST_ASSERT_EQUAL(3, str_length(result));
+  TEST_ASSERT_EQUAL(64, ((strbuf *)mem_p(bufhdl))->data.size);
 
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "two"));
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "three"));
-  TEST_ASSERT_EQUAL_MEMORY("onetwothree", buf.value, 11);
-  TEST_ASSERT_EQUAL(11, buf.length);
-  TEST_ASSERT_EQUAL(64, buf.bufsize);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, "two"));
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, "three"));
+  result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("onetwothree", mem_p(result), 11);
+  TEST_ASSERT_EQUAL(11, str_length(result));
+  TEST_ASSERT_EQUAL(64, ((strbuf *)mem_p(bufhdl))->data.size);
 }
 
 void test_StrbufConcatenate_Str(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("one")));
-  TEST_ASSERT_EQUAL_MEMORY("one", buf.value, 3);
-  TEST_ASSERT_EQUAL(3, buf.length);
-  TEST_ASSERT_EQUAL(64, buf.bufsize);
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("one")));
+  str result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("one", mem_p(result), 3);
+  TEST_ASSERT_EQUAL(3, str_length(result));
+  TEST_ASSERT_EQUAL(64, ((strbuf *)mem_p(bufhdl))->data.size);
 
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("two")));
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("three")));
-  TEST_ASSERT_EQUAL_MEMORY("onetwothree", buf.value, 11);
-  TEST_ASSERT_EQUAL(11, buf.length);
-  TEST_ASSERT_EQUAL(64, buf.bufsize);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("two")));
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("three")));
+  result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("onetwothree", mem_p(result), 11);
+  TEST_ASSERT_EQUAL(11, str_length(result));
+  TEST_ASSERT_EQUAL(64, ((strbuf *)mem_p(bufhdl))->data.size);
 }
 
 void test_StrbufConcatenate_Strbuf(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, "one"));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("one")));
 
-  strbuf bufval = strbuf_create(64);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&bufval, "two"));
+  strbuf_handle bufhdl2 = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("two")));
 
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, bufval));
-  TEST_ASSERT_EQUAL_MEMORY("onetwo", buf.value, 6);
-  TEST_ASSERT_EQUAL(6, buf.length);
-  TEST_ASSERT_EQUAL(64, buf.bufsize);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, bufhdl2));
+  str result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("onetwo", mem_p(result), 6);
+  TEST_ASSERT_EQUAL(6, str_length(result));
+  TEST_ASSERT_EQUAL(64, ((strbuf *)mem_p(bufhdl))->data.size);
 }
 
 void test_StrbufConcatenate_Overflow_Grows(void) {
-  strbuf buf = strbuf_create(16);
-  TEST_ASSERT_EQUAL(0, buf.length);
-  TEST_ASSERT_EQUAL(16, buf.bufsize);
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 16);
+  str result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL(0, str_length(result));
+  TEST_ASSERT_EQUAL(16, ((strbuf *)mem_p(bufhdl))->data.size);
   // (16 X)
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("XXXXXXXXXXXXXXXX")));
-  TEST_ASSERT_EQUAL(16, buf.length);
-  TEST_ASSERT_EQUAL(16, buf.bufsize);
-  TEST_ASSERT_TRUE(strbuf_concatenate(&buf, str_from_cstr("X")));
-  TEST_ASSERT_EQUAL(17, buf.length);
-  TEST_ASSERT_EQUAL(32, buf.bufsize);
+  TEST_ASSERT_TRUE(
+      strbuf_concatenate(bufhdl, str_from_cstr("XXXXXXXXXXXXXXXX")));
+  result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL(16, str_length(result));
+  TEST_ASSERT_EQUAL(16, ((strbuf *)mem_p(bufhdl))->data.size);
+  TEST_ASSERT_TRUE(strbuf_concatenate(bufhdl, str_from_cstr("X")));
+  result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL(17, str_length(result));
+  TEST_ASSERT_EQUAL(32, ((strbuf *)mem_p(bufhdl))->data.size);
 }
 
 void test_StrbufConcatenate_InvalidDestStrbuf_Fails(void) {
-  strbuf buf = strbuf_create(64);
-  strbuf_destroy(&buf);
-  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, "one"));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  strbuf_destroy(bufhdl);
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, "one"));
 }
 
 void test_StrbufConcatenate_NullCstr_Fails(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, (char *)0));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, (char *)0));
 }
 
 void test_StrbufConcatenate_InvalidStr_Fails(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, STR_INVALID));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, STR_INVALID));
 }
 
 void test_StrbufConcatenate_InvalidInputStrbuf_Fails(void) {
-  strbuf buf = strbuf_create(64);
-  TEST_ASSERT_FALSE(strbuf_concatenate(&buf, STRBUF_INVALID));
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, STRBUF_INVALID));
 }
 
 void test_StrbufConcatenatePrintf_Succeeds(void) {
-  strbuf buf = strbuf_create(16);
-  TEST_ASSERT_TRUE(strbuf_concatenate_printf(&buf, "This is a test: %d (%s)",
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  TEST_ASSERT_TRUE(strbuf_concatenate_printf(bufhdl, "This is a test: %d (%s)",
                                              123, "message"));
-  TEST_ASSERT_EQUAL_MEMORY("This is a test: 123 (message)", buf.value, 29);
-  TEST_ASSERT_EQUAL(29, buf.length);
-  TEST_ASSERT_EQUAL(32, buf.bufsize);
+  str result = strbuf_str(bufhdl);
+  TEST_ASSERT_EQUAL_MEMORY("This is a test: 123 (message)", mem_p(result), 29);
+  TEST_ASSERT_EQUAL(29, str_length(result));
+  TEST_ASSERT_EQUAL(32, ((strbuf *)mem_p(bufhdl))->data.size);
 }

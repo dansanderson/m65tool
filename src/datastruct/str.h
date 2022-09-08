@@ -73,11 +73,11 @@ str str_from_cstr(const char *cstr);
 #define str_duplicate(v) \
   _Generic((v), \
     str: str_duplicate_str, \
-    strbuf: str_duplicate_strbuf \
+    strbuf_handle: str_duplicate_strbuf \
   )((v), (void *)0)
 // clang-format on
 str str_duplicate_str(str strval);
-str str_duplicate_strbuf(strbuf bufval);
+str str_duplicate_strbuf(strbuf_handle buf_handle);
 
 // clang-format off
 /**
@@ -89,15 +89,16 @@ str str_duplicate_strbuf(strbuf bufval);
  */
 #define str_duplicate_with_allocator(v, allocator) \
   _Generic((v), \
-    char *: str_duplicate_cstr, \
-    str: str_duplicate_str, \
-    strbuf: str_duplicate_strbuf \
+    char *: str_duplicate_cstr_with_allocator, \
+    str: str_duplicate_str_with_allocator, \
+    strbuf_handle: str_duplicate_strbuf_with_allocator \
   )((v), (allocator))
 // clang-format on
 str str_duplicate_cstr_with_allocator(const char *cstr,
                                       mem_allocator allocator);
 str str_duplicate_str_with_allocator(str strval, mem_allocator allocator);
-str str_duplicate_strbuf_with_allocator(strbuf bufval, mem_allocator allocator);
+str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
+                                        mem_allocator allocator);
 
 /**
  * @brief Invalidate and deallocate a str, as appropriate.
@@ -266,41 +267,27 @@ bool strbuf_is_valid(strbuf_handle buf_handle);
 strbuf_handle strbuf_duplicate(strbuf_handle buf_handle);
 
 // clang-format off
-#define strbuf_concatenate(buf_handle, v) \
-  _Generic((v), \
-    char *: strbuf_concatenate_cstr, \
-    str: strbuf_concatenate_str, \
-    strbuf: strbuf_concatenate_strbuf \
-    )((buf_handle), (v))
-// clang-format on
-
 /**
- * @brief Concatenates a C string to the end of the string buffer.
+ * @brief Concatenates text to the end of the string buffer.
+ *
+ * The value can be a C string, a str, or another strbuf.
  *
  * This may reallocate the buffer if the value outgrows its size. If the
  * reallocation fails, this returns an invalid strbuf.
  *
- * The generic macro strbuf_concatenate(destbuf, v) accepts a C string, a str,
- * or a strbuf as v.
- *
  * @param buf_handle Handle for the strbuf
- * @param cstr The null-terminated C string to concatenate
+ * @param v The C string (null-terminated char *), str, or strbuf_handle to concatenate
  * @return true on success
  */
+#define strbuf_concatenate(buf_handle, v) \
+  _Generic((v), \
+    char *: strbuf_concatenate_cstr, \
+    str: strbuf_concatenate_str, \
+    strbuf_handle: strbuf_concatenate_strbuf \
+    )((buf_handle), (v))
+// clang-format on
 bool strbuf_concatenate_cstr(strbuf_handle buf_handle, const char *cstr);
-
-/**
- * @brief Concatenates a str to the end of the string buffer.
- *
- * See `strbuf_concatenate_cstr`.
- */
 bool strbuf_concatenate_str(strbuf_handle buf_handle, str strval);
-
-/**
- * @brief Concatenates the contents of sourcebuf to the end of destbuf.
- *
- * See `strbuf_concatenate_cstr`.
- */
 bool strbuf_concatenate_strbuf(strbuf_handle buf_handle,
                                strbuf_handle sourcebuf_handle);
 

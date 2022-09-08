@@ -17,12 +17,6 @@ str str_from_cstr(const char *cstr) {
   return mem_handle_from_ptr(cstr, strlen(cstr));
 }
 
-str str_duplicate_strbuf(strbuf bufval) {
-  mem_handle hdl = bufval.data;
-  hdl.size = bufval.length;
-  return mem_duplicate(hdl);
-}
-
 str str_duplicate_str(str strval) {
   return mem_duplicate(strval);
 }
@@ -40,10 +34,12 @@ str str_duplicate_str_with_allocator(str strval, mem_allocator allocator) {
   return mem_duplicate_with_allocator(allocator, strval);
 }
 
-str str_duplicate_strbuf_with_allocator(strbuf bufval,
+str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
                                         mem_allocator allocator) {
-  mem_handle hdl = bufval.data;
-  hdl.size = bufval.length;
+  if (!mem_is_valid(buf_handle)) return (str){0};
+  strbuf *bufp = mem_p(buf_handle);
+  mem_handle hdl = bufp->data;
+  hdl.size = bufp->length;
   return mem_duplicate_with_allocator(allocator, hdl);
 }
 
@@ -61,8 +57,9 @@ str str_write_cstr_to_buf(str strval, char *buf, size_t bufsize) {
     ++i;
   }
   buf[i] = (char)0;
-  return (str){
-      .info.plain_info.ptr = buf, .size = i, .allocator = MEM_NOT_ALLOCATED};
+  return (str){.info.plain.ptr = buf,
+               .size = i,
+               .allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED};
 }
 
 char *str_cstr(str strval) {
@@ -124,16 +121,16 @@ str str_split_pop(str strval, str delim, str *part) {
   int pos = str_find(strval, delim);
   char *strval_p = mem_p(strval);
 
-  part->info.plain_info.ptr = strval_p;
-  part->allocator = MEM_NOT_ALLOCATED;
+  part->info.plain.ptr = strval_p;
+  part->allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED;
   if (pos == -1) {
     part->size = strval.size;
     return STR_INVALID;
   } else {
     part->size = pos;
-    return (str){.info.plain_info.ptr = strval_p + pos + delim.size,
+    return (str){.info.plain.ptr = strval_p + pos + delim.size,
                  .size = strval.size - pos - delim.size,
-                 .allocator = MEM_NOT_ALLOCATED};
+                 .allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED};
   }
 }
 
@@ -161,12 +158,29 @@ bool strbuf_is_valid(strbuf_handle buf_handle) {
           mem_is_valid(((strbuf *)mem_p(buf_handle))->data));
 }
 
+str strbuf_str(strbuf_handle buf_handle) {
+  if (!mem_is_valid(buf_handle)) return (str){0};
+  strbuf *bufp = mem_p(buf_handle);
+  mem_handle hdl = bufp->data;
+  hdl.size = bufp->length;
+  return hdl;
+}
+
 strbuf_handle strbuf_duplicate(strbuf_handle buf_handle) {
   if (!strbuf_is_valid(buf_handle)) return (strbuf_handle){0};
 
+  mem_allocator allocator =
+      (mem_allocator){.allocator_type = buf_handle.allocator_type};
+  if (buf_handle.allocator_type == MEM_ALLOCATOR_TYPE_MEMTBL) {
+    // Reconstructing the mem_allocator from a memtbl * drops information about
+    // how the memtbl itself was allocated. This is necessary because the
+    // handle being duplicated can't contain a complete handle to memtbl.
+    allocator.info.memtbl.handle =
+        mem_handle_from_ptr(buf_handle.info.memtbl.ptr, sizeof(memtbl));
+  }
+
   strbuf *bufp = mem_p(buf_handle);
-  strbuf_handle new_handle =
-      strbuf_create(buf_handle.allocator, bufp->data.size);
+  strbuf_handle new_handle = strbuf_create(allocator, bufp->data.size);
   if (!strbuf_is_valid(new_handle)) return (strbuf_handle){0};
   strbuf *newp = mem_p(new_handle);
   memcpy(mem_p(newp->data), mem_p(bufp->data), bufp->data.size);
