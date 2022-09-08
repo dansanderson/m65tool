@@ -1,9 +1,7 @@
 #include "datastruct/mem.h"
+#include "datastruct/memtbl.h"
 #include "datastruct/str.h"
 #include "unity.h"
-
-static str STR_INVALID = (str){0};
-static strbuf STRBUF_INVALID = (strbuf){0};
 
 memtbl_handle mth;
 
@@ -58,18 +56,18 @@ void test_StrDuplicate_NullCStr_IsInvalid(void) {
 }
 
 void test_StrDuplicate_InvalidStr_IsInvalid(void) {
-  str mystr = STR_INVALID;
+  str mystr = (str){0};
   str val = str_duplicate(mystr);
   TEST_ASSERT_FALSE(str_is_valid(val));
 }
 
 void test_StrDuplicate_InvalidStrbuf_IsInvalid(void) {
-  str val = str_duplicate(STRBUF_INVALID);
+  str val = str_duplicate((strbuf_handle){0});
   TEST_ASSERT_FALSE(str_is_valid(val));
 }
 
 void test_StrDestroy_InvalidStr_RemainsInvalid(void) {
-  str val = STR_INVALID;
+  str val = (str){0};
   str_destroy(&val);
   TEST_ASSERT_FALSE(str_is_valid(val));
 }
@@ -115,7 +113,7 @@ void test_StrWriteCstrToBuf_LargerThanBuf_EndsWithNull(void) {
 
 void test_StrWriteCstrToBuf_InvalidStr_ReturnsInvalid() {
   char buf[20] = "XXXXXXXXXXXXXXXXXXX";
-  str mystr = STR_INVALID;
+  str mystr = (str){0};
   str val = str_write_cstr_to_buf(mystr, buf, sizeof(buf));
   TEST_ASSERT_FALSE(str_is_valid(val));
 }
@@ -134,8 +132,8 @@ void test_StrCstr_ValidStr_ReturnsPtrToString(void) {
   TEST_ASSERT_EQUAL_MEMORY(cstr, result, 12);
 }
 
-void test_StrCSTR_INVALIDStr_ReturnsNullPtr(void) {
-  str val = STR_INVALID;
+void test_StrCstr_StrInvalid_ReturnsNullPtr(void) {
+  str val = (str){0};
   char *result = str_cstr(val);
   TEST_ASSERT_NULL(result);
 }
@@ -176,13 +174,13 @@ void test_StrFind_SubstringNotInString_NotFound(void) {
 }
 
 void test_StrFind_InvalidInputs_NotFound(void) {
-  str haystack = STR_INVALID;
+  str haystack = (str){0};
   str needle = str_from_cstr("on");
   int pos = str_find(haystack, needle);
   TEST_ASSERT_EQUAL(-1, pos);
 
   haystack = str_from_cstr("one two three four");
-  needle = STR_INVALID;
+  needle = (str){0};
   pos = str_find(haystack, needle);
   TEST_ASSERT_EQUAL(-1, pos);
 }
@@ -220,15 +218,15 @@ void test_StrCompare_FirstLongerThanSecond_Pos1(void) {
 }
 
 void test_StrCompare_FirstInvalid_Neg1(void) {
-  TEST_ASSERT_EQUAL(-1, str_compare(STR_INVALID, str_from_cstr("compare")));
+  TEST_ASSERT_EQUAL(-1, str_compare((str){0}, str_from_cstr("compare")));
 }
 
 void test_StrCompare_SecondInvalid_Pos1(void) {
-  TEST_ASSERT_EQUAL(1, str_compare(str_from_cstr("compare"), STR_INVALID));
+  TEST_ASSERT_EQUAL(1, str_compare(str_from_cstr("compare"), (str){0}));
 }
 
 void test_StrCompare_BothInvalid_Zero(void) {
-  TEST_ASSERT_EQUAL(0, str_compare(STR_INVALID, STR_INVALID));
+  TEST_ASSERT_EQUAL(0, str_compare((str){0}, (str){0}));
 }
 
 void test_StrSplitPop_OnceInMiddle_PopsTwice(void) {
@@ -402,12 +400,12 @@ void test_StrbufConcatenate_NullCstr_Fails(void) {
 
 void test_StrbufConcatenate_InvalidStr_Fails(void) {
   strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
-  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, STR_INVALID));
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, (str){0}));
 }
 
 void test_StrbufConcatenate_InvalidInputStrbuf_Fails(void) {
   strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
-  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, STRBUF_INVALID));
+  TEST_ASSERT_FALSE(strbuf_concatenate(bufhdl, (strbuf_handle){0}));
 }
 
 void test_StrbufConcatenatePrintf_Succeeds(void) {

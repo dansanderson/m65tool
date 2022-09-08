@@ -6,7 +6,7 @@
 
 static const unsigned int INITIAL_TABLE_SIZE = 32;
 
-enum map_key_type { MAP_KEY_STR, MAP_KEY_UINT32 };
+enum map_key_type { MAP_KEY_STR, MAP_KEY_PTR };
 
 struct map_entry {
   uint32_t key_hash;
@@ -68,7 +68,7 @@ static uint32_t hash_str(str key) {
 }
 
 /**
- * @brief Hash a uint32 to a uint32.
+ * @brief Hash a memory address to a uint32.
  *
  * This uses Fowler/Noll/Vo 32-bit FNV-1a hash, based on:
  * http://isthe.com/chongo/tech/comp/fnv/
@@ -79,17 +79,19 @@ static uint32_t hash_str(str key) {
  * @param key
  * @return uint32_t
  */
-static uint32_t hash_uint32(uint32_t key) {
+static uint32_t hash_ptr(void *key) {
   uint32_t hash = 0x811c9dc5;
 
-  char c = MAP_KEY_UINT32;
+  char c = MAP_KEY_PTR;
   hash ^= (uint32_t)c;
   // GCC optimized equivalent to hash *= 0x01000193 :
   hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
 
-  for (int i = 0; i < 4; i++) {
-    c = key & 255;
-    key = key >> 8;
+  unsigned long long keyint = key;
+
+  for (int i = 0; i < sizeof(void *); i++) {
+    c = keyint & 255;
+    keyint = keyint >> 8;
     hash ^= (uint32_t)c;
     // GCC optimized equivalent to hash *= 0x01000193 :
     hash +=
@@ -208,10 +210,10 @@ bool map_set_str(map_handle mh, str key, mem_handle value) {
   return do_set(mh, hash_str(key), value, false);
 }
 
-bool map_set_uint32(map_handle mh, uint32_t key, mem_handle value) {
+bool map_set_ptr(map_handle mh, void *key, mem_handle value) {
   if (!map_is_valid(mh)) return false;
   if (!mem_p(value)) return false;
-  return do_set(mh, hash_uint32(key), value, false);
+  return do_set(mh, hash_ptr(key), value, false);
 }
 
 mem_handle map_get_str(map_handle mh, str key) {
@@ -219,17 +221,17 @@ mem_handle map_get_str(map_handle mh, str key) {
   return do_get(mh, hash_str(key));
 }
 
-mem_handle map_get_uint32(map_handle mh, uint32_t key) {
+mem_handle map_get_ptr(map_handle mh, void *key) {
   if (!map_is_valid(mh)) return (mem_handle){0};
-  return do_get(mh, hash_uint32(key));
+  return do_get(mh, hash_ptr(key));
 }
 
 bool map_delete_str(map_handle mh, str key) {
   return do_delete(mh, hash_str(key));
 }
 
-bool map_delete_uint32(map_handle mh, uint32_t key) {
-  return do_delete(mh, hash_uint32(key));
+bool map_delete_ptr(map_handle mh, void *key) {
+  return do_delete(mh, hash_ptr(key));
 }
 
 map_iter map_first_value_iter(map_handle mh) {

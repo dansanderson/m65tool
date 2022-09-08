@@ -10,8 +10,6 @@
 
 static const size_t STR_CSTR_BUFSIZE = 1024;
 static char STR_CSTR_BUFFER[STR_CSTR_BUFSIZE];
-static const str STR_INVALID = (str){0};
-static const strbuf STRBUF_INVALID = (strbuf){0};
 
 str str_from_cstr(const char *cstr) {
   return mem_handle_from_ptr(cstr, strlen(cstr));
@@ -24,10 +22,10 @@ str str_duplicate_str(str strval) {
 str str_duplicate_cstr_with_allocator(const char *cstr,
                                       mem_allocator allocator) {
   if (!cstr) {
-    return STR_INVALID;
+    return (str){0};
   }
   mem_handle hdl = str_from_cstr(cstr);
-  return (str)mem_duplicate_with_allocator(allocator, hdl);
+  return mem_duplicate_with_allocator(allocator, hdl);
 }
 
 str str_duplicate_str_with_allocator(str strval, mem_allocator allocator) {
@@ -36,11 +34,19 @@ str str_duplicate_str_with_allocator(str strval, mem_allocator allocator) {
 
 str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
                                         mem_allocator allocator) {
-  if (!mem_is_valid(buf_handle)) return (str){0};
+  if (!strbuf_is_valid(buf_handle)) return (str){0};
   strbuf *bufp = mem_p(buf_handle);
   mem_handle hdl = bufp->data;
   hdl.size = bufp->length;
   return mem_duplicate_with_allocator(allocator, hdl);
+}
+
+str str_duplicate_str(str strval) {
+  return str_duplicate_str_with_allocator(strval, strval.allocator);
+}
+
+str str_duplicate_strbuf(strbuf_handle buf_handle) {
+  return str_duplicate_strbuf_with_allocator(buf_handle, buf_handle.allocator);
 }
 
 inline void str_destroy(str strval) {
@@ -49,17 +55,14 @@ inline void str_destroy(str strval) {
 
 str str_write_cstr_to_buf(str strval, char *buf, size_t bufsize) {
   if (!str_is_valid(strval) || buf == (char *)0) {
-    return STR_INVALID;
+    return (str){0};
   }
-  int i = 0;
-  while (i < bufsize - 1 && i < strval.size) {
-    buf[i] = ((char *)mem_p(strval))[i];
-    ++i;
-  }
-  buf[i] = (char)0;
-  return (str){.info.plain.ptr = buf,
-               .size = i,
-               .allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED};
+  size_t size_to_copy = strval.size < bufsize - 1 ? strval.size : bufsize - 1;
+  memcpy(buf, mem_p(strval), size_to_copy);
+  buf[size_to_copy] = (char)0;
+  return (str){.data = buf,
+               .size = size_to_copy,
+               .allocator = MEM_ALLOCATOR_NOT_ALLOCATED};
 }
 
 char *str_cstr(str strval) {
@@ -121,16 +124,16 @@ str str_split_pop(str strval, str delim, str *part) {
   int pos = str_find(strval, delim);
   char *strval_p = mem_p(strval);
 
-  part->info.plain.ptr = strval_p;
-  part->allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED;
+  part->data = strval_p;
+  part->allocator = MEM_ALLOCATOR_NOT_ALLOCATED;
   if (pos == -1) {
     part->size = strval.size;
-    return STR_INVALID;
+    return (str){0};
   } else {
     part->size = pos;
-    return (str){.info.plain.ptr = strval_p + pos + delim.size,
+    return (str){.data = strval_p + pos + delim.size,
                  .size = strval.size - pos - delim.size,
-                 .allocator_type = MEM_ALLOCATOR_TYPE_NOT_ALLOCATED};
+                 .allocator = MEM_ALLOCATOR_NOT_ALLOCATED};
   }
 }
 
@@ -138,7 +141,10 @@ strbuf_handle strbuf_create(mem_allocator allocator, size_t size) {
   mem_handle bufhdl = mem_alloc(allocator, sizeof(strbuf));
   if (!mem_is_valid(bufhdl)) return (strbuf_handle){0};
   mem_handle data = mem_alloc_clear(allocator, size);
-  if (!mem_is_valid(data)) return (strbuf_handle){0};
+  if (!mem_is_valid(data)) {
+    mem_free(bufhdl);
+    return (strbuf_handle){0};
+  }
 
   strbuf *bufp = mem_p(bufhdl);
   bufp->data = data;
@@ -147,7 +153,7 @@ strbuf_handle strbuf_create(mem_allocator allocator, size_t size) {
 }
 
 void strbuf_destroy(strbuf_handle buf_handle) {
-  if (!mem_is_valid(buf_handle)) return;
+  if (!strbuf_is_valid(buf_handle)) return;
   strbuf *bufp = mem_p(buf_handle);
   mem_free(bufp->data);
   mem_free(buf_handle);
@@ -161,32 +167,10 @@ bool strbuf_is_valid(strbuf_handle buf_handle) {
 str strbuf_str(strbuf_handle buf_handle) {
   if (!mem_is_valid(buf_handle)) return (str){0};
   strbuf *bufp = mem_p(buf_handle);
-  mem_handle hdl = bufp->data;
-  hdl.size = bufp->length;
-  return hdl;
-}
-
-strbuf_handle strbuf_duplicate(strbuf_handle buf_handle) {
-  if (!strbuf_is_valid(buf_handle)) return (strbuf_handle){0};
-
-  mem_allocator allocator =
-      (mem_allocator){.allocator_type = buf_handle.allocator_type};
-  if (buf_handle.allocator_type == MEM_ALLOCATOR_TYPE_MEMTBL) {
-    // Reconstructing the mem_allocator from a memtbl * drops information about
-    // how the memtbl itself was allocated. This is necessary because the
-    // handle being duplicated can't contain a complete handle to memtbl.
-    allocator.info.memtbl.handle =
-        mem_handle_from_ptr(buf_handle.info.memtbl.ptr, sizeof(memtbl));
-  }
-
-  strbuf *bufp = mem_p(buf_handle);
-  strbuf_handle new_handle = strbuf_create(allocator, bufp->data.size);
-  if (!strbuf_is_valid(new_handle)) return (strbuf_handle){0};
-  strbuf *newp = mem_p(new_handle);
-  memcpy(mem_p(newp->data), mem_p(bufp->data), bufp->data.size);
-  newp->length = bufp->length;
-
-  return new_handle;
+  str result = bufp->data;
+  result.size = bufp->length;
+  result.allocator = MEM_ALLOCATOR_NOT_ALLOCATED;
+  return result;
 }
 
 static bool grow_strbuf(strbuf_handle buf_handle) {
@@ -204,9 +188,7 @@ static bool do_strbuf_concatenate(strbuf_handle buf_handle, const char *cstr,
   while (destbufp->length + length > destbufp->data.size) {
     if (!grow_strbuf(buf_handle)) return false;
   }
-  for (int i = 0; i < length; i++) {
-    ((char *)mem_p(destbufp->data))[destbufp->length + i] = cstr[i];
-  }
+  memcpy((char *)mem_p(destbufp->data) + destbufp->length, cstr, length);
   destbufp->length += length;
   return true;
 }
@@ -249,4 +231,16 @@ bool strbuf_concatenate_printf(strbuf_handle buf_handle, const char *fmt, ...) {
   va_end(v);
   destbufp->length += length - 1;
   return true;
+}
+
+strbuf_handle strbuf_duplicate(strbuf_handle buf_handle) {
+  if (!strbuf_is_valid(buf_handle)) return (strbuf_handle){0};
+  strbuf_handle new_handle = strbuf_create(
+      buf_handle.allocator, ((strbuf *)mem_p(buf_handle))->data.size);
+  if (!strbuf_is_valid(new_handle)) return (strbuf_handle){0};
+  if (!strbuf_concatenate_strbuf(new_handle, buf_handle)) {
+    str_destroy(new_handle);
+    return (strbuf_handle){0};
+  }
+  return new_handle;
 }

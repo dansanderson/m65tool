@@ -2,45 +2,28 @@
  * @file mem.h
  * @brief Memory allocation routines.
  *
- * This library provides dynamic memory allocation routines that can use
- * multiple types of allocators. It provides two allocator types: a plain
- * allocator that wraps `malloc` et al., and a memory table data structure.
- * `datastruct` data structures accept an allocator in the constructor
- * argument, and use the given allocator for all internal memory management.
+ * These routines wraps memory allocation routines (malloc, calloc, realloc,
+ * free) with a memory allocator abstraction, and wraps pointers with a memory
+ * handle abstraction. An allocator can have a pointer payload, and can attach a
+ * pointer payload to each memory handle.
  *
- * A memory table is a memory allocator that remembers all allocations.
- * When a memory table is destroyed, all of its allocations are freed. This
- * makes it suitable for error recovery.
+ * This is primarily intended to support both plain allocation and memory table
+ * allocation (see memtbl.h) throughout the datastruct library. The user
+ * provides an allocator to a constructor, and the object uses that allocator
+ * throughout its lifetime.
  *
- * Memory table operations guard against being interrupted by SIGINT, making it
- * suitable for interrupt signal handling. Typically, you create a memory table,
- * then set a SIGINT handler to `longjmp` to code that destroys the memory table
- * and aborts the operation. The operation should destroy the memory table on
- * clean exit as well.
+ * Memory operations guard against being interrupted by SIGINT to keep the
+ * internal state of an allocator consistent. This allows a memtbl allocator
+ * to be used as part of a SIGINT handler, to abort an operation cleanly.
  *
  * Allocation returns a handle that can be used to access the address of the
  * memory, reallocate the memory, and free the memory. The handle is small and
- * can be passed by value.
+ * can be passed by value, similar to a pointer. The handle stores the size of
+ * the memory region, and information about the allocator.
  *
- * A memory table does not know about destructors, and as such is only suitable
- * for Plain Old Data objects. A memory table can be the allocator for another
- * memory table. Naturally, the topmost memory table must use a plain allocator.
- *
- *   memtbl_handle mth = memtbl_create(mem_allocator_plain());
- *   if (!memtbl_is_valid(mth)) goto end;
- *   mem_allocator ma = mem_allocator_memtbl(mth);
- *
- *   mem_handle buf_handle = mem_alloc(ma, 128);
- *   if (!mem_p(buf_handle)) goto end;
- *   map_handle config_map = map_create(ma);
- *   if (!map_is_valid(config_map)) goto end;
- *   // ...
- *
- *   end:
- *   memtbl_destroy(mth);
- *
- * If you need to pass a pointer of memory that was not allocated by
- * `mem_alloc`, use `mem_handle_from_ptr`.
+ * You can wrap unowned pointers with a memory handle for use with datastruct
+ * operations. `mem_realloc` and `mem_free` do nothing when given such a handle.
+ * See `mem_handle_from_ptr`.
  */
 
 #ifndef DATASTRUCT_MEM_H
@@ -52,64 +35,44 @@
 
 #include "map.h"
 
-// Internal memtbl ID. Must be incrementable, and a key type of map.
-typedef uint32_t memtbl_id;
-
-// A memory table. Create with `memtbl_create`, destroy with `memtbl_destroy`.
-typedef struct memtbl {
-  memtbl_id next_id;
-  map_handle mem_map_handle;
-} memtbl;
-
-// Handle for a memtbl.
-typedef mem_handle memtbl_handle;
-
 // Type tags for mem_allocator.
 enum mem_allocator_type {
-  MEM_ALLOCATOR_TYPE_INVALID,
+  MEM_ALLOCATOR_TYPE_INVALID = 0,
   MEM_ALLOCATOR_TYPE_NOT_ALLOCATED,
   MEM_ALLOCATOR_TYPE_PLAIN,
-  MEM_ALLOCATOR_TYPE_MEMTBL
+  MEM_ALLOCATOR_TYPE_MEMTBL  // memtbl.h
 };
+
+typedef struct mem_allocator_spec {
+  enum mem_allocator_type allocator_type;
+  mem_handle (*alloc_func)(mem_allocator allocator, size_t size);
+  mem_handle (*realloc_func)(mem_handle handle, size_t size);
+  mem_handle (*free_func)(mem_handle handle);
+  void *(*p_func)(mem_handle handle);
+} mem_allocator_spec;
 
 // Allocator for `mem_alloc` and datastruct constructors.
 typedef struct mem_allocator {
-  enum mem_allocator_type allocator_type;
-  union {
-    struct {
-      memtbl_handle handle;
-    } memtbl;
-  } info;
+  mem_allocator_spec *allocator_spec;
+  void *allocator_data;
 } mem_allocator;
 
 // Simple allocators with no attached data.
-extern const mem_allocator MEM_NOT_ALLOCATED;
+extern const mem_allocator MEM_ALLOCATOR_NOT_ALLOCATED;
 extern const mem_allocator MEM_ALLOCATOR_PLAIN;
 
 // Handle for an allocation.
 typedef struct mem_handle {
-  enum mem_allocator_type allocator_type;
-  union {
-    struct {
-      memtbl_id id;
-      memtbl *ptr;
-    } memtbl;
-    struct {
-      void *ptr;
-    } plain;
-  } info;
+  void *data;
   size_t size;
+
+  mem_allocator allocator;
 } mem_handle;
 
 /**
- * @return mem_handle for a region of memory
+ * @return mem_handle for an unowned region of memory
  */
 inline mem_handle mem_handle_from_ptr(void *ptr, size_t size);
-
-/**
- * @returns a `mem_allocator` that uses a given memtbl.
- */
-inline mem_allocator mem_allocator_memtbl(memtbl_handle mth);
 
 /**
  * @brief Allocates memory.
@@ -120,7 +83,7 @@ inline mem_allocator mem_allocator_memtbl(memtbl_handle mth);
  * @return A memory handle, possibly invalid. Test `mem_p(handle)` for null
  * before using.
  */
-mem_handle mem_alloc(mem_allocator ma, size_t size);
+mem_handle mem_alloc(mem_allocator allocator, size_t size);
 
 /**
  * @brief Allocates memory, cleared with zeroes.
@@ -131,7 +94,7 @@ mem_handle mem_alloc(mem_allocator ma, size_t size);
  * @return A memory handle, possibly invalid. Test `mem_p(handle)` for null
  * before using.
  */
-mem_handle mem_alloc_clear(mem_allocator ma, size_t size);
+mem_handle mem_alloc_clear(mem_allocator allocator, size_t size);
 
 /**
  * @brief Reallocates memory.
@@ -155,13 +118,15 @@ mem_handle mem_realloc(mem_handle handle, size_t size);
 /**
  * @brief Frees an allocation of memory.
  *
- * After using, discard the original memory handle. Technically it is safe
- * to free an already-freed memory handle when using a memtbl allocator, but
- * it is not safe when using the plain allocator.
+ * After using, discard the original memory handle. If necessary, store
+ * the value returned by `mem_free` (an invalid handle) to avoid reusing a freed
+ * handle.
  *
  * @param handle The memory handle to free
+ * @return mem_handle An invalid mem_handle. Replace the freed handle with this
+ *   storage, or ignore it if not needed.
  */
-void mem_free(mem_handle handle);
+mem_handle mem_free(mem_handle handle);
 
 /**
  * @brief Accesses the address of memory for a handle.
@@ -173,6 +138,11 @@ void mem_free(mem_handle handle);
  * @return void* The address of the allocated memory
  */
 void *mem_p(mem_handle handle);
+
+/**
+ * @return size_t The size of the memory region
+ */
+inline size_t mem_size(mem_handle handle);
 
 /**
  * @param handle The memory handle
@@ -189,7 +159,7 @@ inline bool mem_is_valid(mem_handle handle);
  * @param handle The memory to duplicate
  * @return mem_handle The duplicated memory, or an invalid handle on failure
  */
-mem_handle mem_duplicate(mem_handle handle);
+inline mem_handle mem_duplicate(mem_handle handle);
 
 /**
  * @brief Duplicates a memory region using a given allocator.
@@ -200,31 +170,5 @@ mem_handle mem_duplicate(mem_handle handle);
  */
 mem_handle mem_duplicate_with_allocator(mem_allocator allocator,
                                         mem_handle handle);
-
-/**
- * @brief Creates a memory table.
- *
- * Use `memtbl_is_valid` to confirm that the table is valid before using.
- * Functions will fail gracefully if called with an invalid table.
- *
- * @param ma A memory allocator to use for this memtbl
- * @return memtbl The memory table, possibly invalid
- */
-memtbl_handle memtbl_create(mem_allocator ma);
-
-/**
- * @param mth Handle of the memory table.
- * @return true if the memory table is valid.
- */
-bool memtbl_is_valid(memtbl_handle mth);
-
-/**
- * @brief Destroys a memory table and deallocates all un-freed entries.
- *
- * The memtbl is updated so that it is no longer valid.
- *
- * @param mth Handle of the memory table to destroy.
- */
-void memtbl_destroy(memtbl_handle mth);
 
 #endif

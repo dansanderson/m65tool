@@ -50,15 +50,11 @@ noinst_LTLIBRARIES += libdatastruct.la
 libdatastruct_la_SOURCES = \
     ./src/datastruct/map.h \
     ./src/datastruct/mem.c \
-    ./src/datastruct/strmap.h \
     ./src/datastruct/str.c \
-    ./src/datastruct/memlist.h \
     ./src/datastruct/datastruct.h \
     ./src/datastruct/map.c \
     ./src/datastruct/str.h \
-    ./src/datastruct/strmap.c \
-    ./src/datastruct/mem.h \
-    ./src/datastruct/memlist.c
+    ./src/datastruct/mem.h
 
 tests/mocks/mock_datastruct.c tests/mocks/mock_datastruct.h: ./src/datastruct/datastruct.h
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
@@ -82,31 +78,31 @@ CLEANFILES += \
     tests/mocks/mock_datastruct.c \
     tests/mocks/mock_datastruct.h
 
-check_PROGRAMS += tests/runners/test_strmap
+check_PROGRAMS += tests/runners/test_mem
 
-tests/runners/runner_test_strmap.c: ./tests/datastruct/test_strmap.c
+tests/runners/runner_test_mem.c: ./tests/datastruct/test_mem.c
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	mkdir -p tests/runners
 	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
 
-tests_runners_test_strmap_SOURCES = \
-    tests/datastruct/test_strmap.c \
+tests_runners_test_mem_SOURCES = \
+    tests/datastruct/test_mem.c \
     src/datastruct/datastruct.h
 
-nodist_tests_runners_test_strmap_SOURCES = tests/runners/runner_test_strmap.c
+nodist_tests_runners_test_mem_SOURCES = tests/runners/runner_test_mem.c
 
-tests/datastruct/runners_test_strmap-test_strmap.$(OBJEXT): \
-    tests/runners/runner_test_strmap.c \
+tests/datastruct/runners_test_mem-test_mem.$(OBJEXT): \
+    tests/runners/runner_test_mem.c \
     libcmock.la \
     libdatastruct.la
 
-CLEANFILES += tests/runners/runner_test_strmap.c
+CLEANFILES += tests/runners/runner_test_mem.c
 
-tests_runners_test_strmap_LDADD = \
+tests_runners_test_mem_LDADD = \
     libcmock.la \
     libdatastruct.la
 
-tests_runners_test_strmap_CPPFLAGS = \
+tests_runners_test_mem_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
     $(AM_CPPFLAGS)
 
@@ -138,59 +134,31 @@ tests_runners_test_str_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
     $(AM_CPPFLAGS)
 
-check_PROGRAMS += tests/runners/test_memlist
+check_PROGRAMS += tests/runners/test_map
 
-tests/runners/runner_test_memlist.c: ./tests/datastruct/test_memlist.c
+tests/runners/runner_test_map.c: ./tests/datastruct/test_map.c
 	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
 	mkdir -p tests/runners
 	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
 
-tests_runners_test_memlist_SOURCES = \
-    tests/datastruct/test_memlist.c \
+tests_runners_test_map_SOURCES = \
+    tests/datastruct/test_map.c \
     src/datastruct/datastruct.h
 
-nodist_tests_runners_test_memlist_SOURCES = tests/runners/runner_test_memlist.c
+nodist_tests_runners_test_map_SOURCES = tests/runners/runner_test_map.c
 
-tests/datastruct/runners_test_memlist-test_memlist.$(OBJEXT): \
-    tests/runners/runner_test_memlist.c \
+tests/datastruct/runners_test_map-test_map.$(OBJEXT): \
+    tests/runners/runner_test_map.c \
     libcmock.la \
     libdatastruct.la
 
-CLEANFILES += tests/runners/runner_test_memlist.c
+CLEANFILES += tests/runners/runner_test_map.c
 
-tests_runners_test_memlist_LDADD = \
+tests_runners_test_map_LDADD = \
     libcmock.la \
     libdatastruct.la
 
-tests_runners_test_memlist_CPPFLAGS = \
-    $(CMOCK_CPPFLAGS) \
-    $(AM_CPPFLAGS)
-
-check_PROGRAMS += tests/runners/test_datastruct
-
-tests/runners/runner_test_datastruct.c: ./tests/datastruct/test_datastruct.c
-	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
-	mkdir -p tests/runners
-	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
-
-tests_runners_test_datastruct_SOURCES = \
-    tests/datastruct/test_datastruct.c \
-    src/datastruct/datastruct.h
-
-nodist_tests_runners_test_datastruct_SOURCES = tests/runners/runner_test_datastruct.c
-
-tests/datastruct/runners_test_datastruct-test_datastruct.$(OBJEXT): \
-    tests/runners/runner_test_datastruct.c \
-    libcmock.la \
-    libdatastruct.la
-
-CLEANFILES += tests/runners/runner_test_datastruct.c
-
-tests_runners_test_datastruct_LDADD = \
-    libcmock.la \
-    libdatastruct.la
-
-tests_runners_test_datastruct_CPPFLAGS = \
+tests_runners_test_map_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
     $(AM_CPPFLAGS)
 

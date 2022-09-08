@@ -256,15 +256,15 @@ void strbuf_destroy(strbuf_handle buf_handle);
 bool strbuf_is_valid(strbuf_handle buf_handle);
 
 /**
- * @brief Allocates a new strbuf with the contents of the given strbuf.
+ * @brief Gets a str reference for the current contents of the buffer.
  *
- * The caller is responsible for calling `strbuf_destroy` on the result when no
- * longer needed.
+ * The result points to buffer memory directly. To get an allocated str copy of
+ * the buffer contents, use `str_duplicate(buffer)`.
  *
- * @param buf_handle Handle for the strbuf to duplicate
- * @return strbuf The new strbuf
+ * @param buf_handle The string buffer
+ * @return str A str reference to the buffer contents
  */
-strbuf_handle strbuf_duplicate(strbuf_handle buf_handle);
+str strbuf_str(strbuf_handle buf_handle);
 
 // clang-format off
 /**
@@ -303,5 +303,16 @@ bool strbuf_concatenate_strbuf(strbuf_handle buf_handle,
  * @return true on success
  */
 bool strbuf_concatenate_printf(strbuf_handle buf_handle, const char *fmt, ...);
+
+/**
+ * @brief Allocates a new strbuf with the contents of the given strbuf.
+ *
+ * The caller is responsible for calling `strbuf_destroy` on the result when
+ * no longer needed.
+ *
+ * @param buf_handle Handle for the strbuf to duplicate
+ * @return strbuf The new strbuf
+ */
+strbuf_handle strbuf_duplicate(strbuf_handle buf_handle);
 
 #endif

@@ -2,7 +2,7 @@
  * @file map.h
  * @brief A map data structure.
  *
- * This map data structure can use `str` keys or `uint32_t` keys.
+ * This map data structure can use `str` keys or `void *` keys.
  *
  * The value of an entry is a mem_handle. A map never owns the memory of the
  * value: when a key is deleted or the map is destroyed, the map does not free
@@ -62,36 +62,40 @@ void map_destroy(map_handle mh);
  * If this returns false, the entry was not set successfully, possibly due to
  * an out-of-memory error while resizing the internal table.
  *
- * @param mh
- * @param key
- * @param value
+ * @param mh The map_handle
+ * @param key The key, either a str or a void*
+ * @param value The mem_handle value
  * @return true on success
  */
+// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
+// the meantime.
 #define map_set(mh, key, value) \
   _Generic((key), \
     str: map_set_str, \
-    uint32_t: map_set_uint32 \
+    void *: map_set_ptr \
   )((mh), (key), (value))
 // clang-format on
 bool map_set_str(map_handle mh, str key, mem_handle value);
-bool map_set_uint32(map_handle mh, uint32_t key, mem_handle value);
+bool map_set_ptr(map_handle mh, void *key, mem_handle value);
 
 // clang-format off
 /**
  * @brief Gets a value for a key in a map.
  *
  * @param mh The map_handle
- * @param key The key, either a str or a uint32_t
- * @return mem_handle
+ * @param key The key, either a str or a void*
+ * @return mem_handle The value stored, or an invalid mem_handle if not found
  */
+// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
+// the meantime.
 #define map_get(mh, key) \
   _Generic((key), \
     str: map_get_str, \
-    uint32_t: map_get_uint32 \
+    void *: map_get_ptr \
   )((mh), (key))
 // clang-format on
 mem_handle map_get_str(map_handle mh, str key);
-mem_handle map_get_uint32(map_handle mh, uint32_t key);
+mem_handle map_get_ptr(map_handle mh, void *key);
 
 // clang-format off
 /**
@@ -101,17 +105,19 @@ mem_handle map_get_uint32(map_handle mh, uint32_t key);
  * shrink the internal table. The value is still deleted from the map.
  *
  * @param mh The map_handle
- * @param key The key, either a str or a uint32_t
+ * @param key The key, either a str or a void*
  * @return false if there was a memory error while shrinking the internal table
  */
+// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
+// the meantime.
 #define map_delete(mh, key) \
   _Generic((key), \
     str: map_delete_str, \
-    uint32_t: map_delete_uint32 \
+    void *: map_delete_ptr \
   )((mh), (key))
 // clang-format on
 bool map_delete_str(map_handle mh, str key);
-bool map_delete_uint32(map_handle mh, uint32_t key);
+bool map_delete_ptr(map_handle mh, void *key);
 
 // Map iterator
 typedef struct map_iter {
