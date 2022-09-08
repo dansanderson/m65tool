@@ -108,7 +108,7 @@ str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
  *
  * @param strp Ptr to the str
  */
-inline void str_destroy(str strval);
+void str_destroy(str strval);
 
 /**
  * @brief Copies str data to a C string buffer, with a null terminator.
@@ -155,12 +155,12 @@ char *str_cstr(str strval);
 /**
  * @return true if the str is valid
  */
-inline bool str_is_valid(str strval);
+bool str_is_valid(str strval);
 
 /**
  * @return size_t The length of the str
  */
-inline size_t str_length(str strval);
+size_t str_length(str strval);
 
 /**
  * @brief Finds the left-most occurrence of a substring in a string.

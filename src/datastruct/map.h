@@ -152,7 +152,7 @@ map_iter map_next_value_iter(map_iter it);
  * @return true if the iterator does not point to a value and has no values
  *   after it.
  */
-inline bool map_iter_done(map_iter it);
+bool map_iter_done(map_iter it);
 
 /**
  * @brief Gets the map value pointed at by an iterator.
@@ -160,6 +160,6 @@ inline bool map_iter_done(map_iter it);
  * @param it
  * @return mem_handle
  */
-inline mem_handle map_iter_value(map_iter it);
+mem_handle map_iter_value(map_iter it);
 
 #endif

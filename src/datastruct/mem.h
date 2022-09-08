@@ -33,8 +33,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "map.h"
-
 // Type tags for mem_allocator.
 enum mem_allocator_type {
   MEM_ALLOCATOR_TYPE_INVALID = 0,
@@ -43,6 +41,8 @@ enum mem_allocator_type {
   MEM_ALLOCATOR_TYPE_MEMTBL  // memtbl.h
 };
 
+typedef struct mem_handle mem_handle;
+typedef struct mem_allocator mem_allocator;
 typedef struct mem_allocator_spec {
   enum mem_allocator_type allocator_type;
   mem_handle (*alloc_func)(mem_allocator allocator, size_t size);
@@ -52,27 +52,26 @@ typedef struct mem_allocator_spec {
 } mem_allocator_spec;
 
 // Allocator for `mem_alloc` and datastruct constructors.
-typedef struct mem_allocator {
-  mem_allocator_spec *allocator_spec;
+struct mem_allocator {
+  const mem_allocator_spec *allocator_spec;
   void *allocator_data;
-} mem_allocator;
+};
 
 // Simple allocators with no attached data.
 extern const mem_allocator MEM_ALLOCATOR_NOT_ALLOCATED;
 extern const mem_allocator MEM_ALLOCATOR_PLAIN;
 
 // Handle for an allocation.
-typedef struct mem_handle {
+struct mem_handle {
   void *data;
   size_t size;
-
   mem_allocator allocator;
-} mem_handle;
+};
 
 /**
  * @return mem_handle for an unowned region of memory
  */
-inline mem_handle mem_handle_from_ptr(void *ptr, size_t size);
+mem_handle mem_handle_from_ptr(void *ptr, size_t size);
 
 /**
  * @brief Allocates memory.
@@ -142,13 +141,13 @@ void *mem_p(mem_handle handle);
 /**
  * @return size_t The size of the memory region
  */
-inline size_t mem_size(mem_handle handle);
+size_t mem_size(mem_handle handle);
 
 /**
  * @param handle The memory handle
  * @return true if the memory handle is valid
  */
-inline bool mem_is_valid(mem_handle handle);
+bool mem_is_valid(mem_handle handle);
 
 /**
  * @brief Duplicates a memory region.
@@ -159,7 +158,7 @@ inline bool mem_is_valid(mem_handle handle);
  * @param handle The memory to duplicate
  * @return mem_handle The duplicated memory, or an invalid handle on failure
  */
-inline mem_handle mem_duplicate(mem_handle handle);
+mem_handle mem_duplicate(mem_handle handle);
 
 /**
  * @brief Duplicates a memory region using a given allocator.

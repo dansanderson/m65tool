@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "map.h"
-
 static void *mem_handle_data(mem_handle handle) {
   return handle.data;
 }

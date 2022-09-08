@@ -48,10 +48,12 @@ CLEANFILES += tests/runners/runner_test_*.c
 noinst_LTLIBRARIES += libdatastruct.la
 
 libdatastruct_la_SOURCES = \
+    ./src/datastruct/memtbl.c \
     ./src/datastruct/map.h \
     ./src/datastruct/mem.c \
     ./src/datastruct/str.c \
     ./src/datastruct/datastruct.h \
+    ./src/datastruct/memtbl.h \
     ./src/datastruct/map.c \
     ./src/datastruct/str.h \
     ./src/datastruct/mem.h

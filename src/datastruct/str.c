@@ -12,11 +12,7 @@ static const size_t STR_CSTR_BUFSIZE = 1024;
 static char STR_CSTR_BUFFER[STR_CSTR_BUFSIZE];
 
 str str_from_cstr(const char *cstr) {
-  return mem_handle_from_ptr(cstr, strlen(cstr));
-}
-
-str str_duplicate_str(str strval) {
-  return mem_duplicate(strval);
+  return mem_handle_from_ptr((void *)cstr, strlen(cstr));
 }
 
 str str_duplicate_cstr_with_allocator(const char *cstr,
@@ -42,7 +38,7 @@ str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
 }
 
 str str_duplicate_str(str strval) {
-  return str_duplicate_str_with_allocator(strval, strval.allocator);
+  return mem_duplicate(strval);
 }
 
 str str_duplicate_strbuf(strbuf_handle buf_handle) {

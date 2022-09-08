@@ -74,7 +74,7 @@ static void *memtbl_p(mem_handle handle) {
   if (!mem_is_valid(handle)) return (void *)0;
   memtbl *tblp = handle.allocator.allocator_data;
   if (!tblp || !mem_is_valid(tblp->mem_map_handle)) return (void *)0;
-  return map_get_ptr(tblp->mem_map_handle, handle.data);
+  return mem_p(map_get_ptr(tblp->mem_map_handle, handle.data));
 }
 
 static const mem_allocator_spec MEMTBL_ALLOCATOR_SPEC =

@@ -1,5 +1,6 @@
 #include "map.h"
 
+#include <assert.h>
 #include <stdint.h>
 
 #include "str.h"
@@ -87,9 +88,9 @@ static uint32_t hash_ptr(void *key) {
   // GCC optimized equivalent to hash *= 0x01000193 :
   hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
 
-  unsigned long long keyint = key;
+  uintptr_t keyint = (uintptr_t)key;
 
-  for (int i = 0; i < sizeof(void *); i++) {
+  for (int i = 0; i < sizeof(uintptr_t); i++) {
     c = keyint & 255;
     keyint = keyint >> 8;
     hash ^= (uint32_t)c;
@@ -191,7 +192,7 @@ static bool do_delete(map_handle mh, uint32_t key_hash) {
   map *mp = mem_p(mh);
   map_entry *entries = mem_p(mp->entries_mh);
   unsigned int pos = find_entry_pos(mh, key_hash);
-  if ((entries + pos)->key_hash == 0) return;
+  if ((entries + pos)->key_hash == 0) return false;
 
   (entries + pos)->key_hash = 0;
   (entries + pos)->value_handle = (mem_handle){0};

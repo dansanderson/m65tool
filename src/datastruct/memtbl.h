@@ -1,3 +1,4 @@
+#include "map.h"
 #include "mem.h"
 
 /**
@@ -61,4 +62,4 @@ void memtbl_destroy(memtbl_handle mthandle);
 /**
  * @returns a `mem_allocator` that uses a given memtbl.
  */
-inline mem_allocator mem_allocator_memtbl(memtbl_handle mthandle);
+mem_allocator mem_allocator_memtbl(memtbl_handle mthandle);
