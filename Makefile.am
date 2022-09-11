@@ -164,6 +164,34 @@ tests_runners_test_map_CPPFLAGS = \
     $(CMOCK_CPPFLAGS) \
     $(AM_CPPFLAGS)
 
+check_PROGRAMS += tests/runners/test_memtbl
+
+tests/runners/runner_test_memtbl.c: ./tests/datastruct/test_memtbl.c
+	@test -n "$(RUBY)" || { echo "\nPlease install Ruby to run tests.\n"; exit 1; }
+	mkdir -p tests/runners
+	$(RUBY) $(top_srcdir)/third-party/CMock/vendor/unity/auto/generate_test_runner.rb $< $@
+
+tests_runners_test_memtbl_SOURCES = \
+    tests/datastruct/test_memtbl.c \
+    src/datastruct/datastruct.h
+
+nodist_tests_runners_test_memtbl_SOURCES = tests/runners/runner_test_memtbl.c
+
+tests/datastruct/runners_test_memtbl-test_memtbl.$(OBJEXT): \
+    tests/runners/runner_test_memtbl.c \
+    libcmock.la \
+    libdatastruct.la
+
+CLEANFILES += tests/runners/runner_test_memtbl.c
+
+tests_runners_test_memtbl_LDADD = \
+    libcmock.la \
+    libdatastruct.la
+
+tests_runners_test_memtbl_CPPFLAGS = \
+    $(CMOCK_CPPFLAGS) \
+    $(AM_CPPFLAGS)
+
 
 ### m65tool
 

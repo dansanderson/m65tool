@@ -120,7 +120,7 @@ inline size_t mem_size(mem_handle handle) {
 }
 
 inline bool mem_is_valid(mem_handle handle) {
-  return (!mem_p(handle));
+  return handle.data != (void *)0;
 }
 
 mem_handle mem_duplicate_with_allocator(mem_allocator allocator,

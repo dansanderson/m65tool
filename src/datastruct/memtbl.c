@@ -38,7 +38,8 @@ static mem_handle memtbl_alloc(mem_allocator allocator, size_t size) {
   void *data = malloc(size);
   if (!data) return (mem_handle){0};
   mem_handle result = {.allocator = allocator, .data = data, .size = size};
-  if (!map_set_ptr(tblp->mem_map_handle, data, result)) {
+  bool mapset_success = map_set_ptr(tblp->mem_map_handle, data, result);
+  if (!mapset_success) {
     free(data);
     return (mem_handle){0};
   }
@@ -49,13 +50,17 @@ static mem_handle memtbl_realloc(mem_handle handle, size_t size) {
   if (!mem_is_valid(handle)) return (mem_handle){0};
   memtbl *tblp = handle.allocator.allocator_data;
   if (!tblp || !mem_is_valid(tblp->mem_map_handle)) return (mem_handle){0};
-  void *new_data = realloc(mem_p(handle), size);
+  void *old_data = mem_p(handle);
+  void *new_data = realloc(old_data, size);
   if (!new_data) return (mem_handle){0};
   mem_handle result = {
       .allocator = handle.allocator, .data = new_data, .size = size};
-  if (!map_set_ptr(tblp->mem_map_handle, new_data, result)) {
-    free(new_data);
-    return (mem_handle){0};
+  if (new_data != old_data) {
+    if (!map_set_ptr(tblp->mem_map_handle, new_data, result) ||
+        !map_delete_ptr(tblp->mem_map_handle, old_data)) {
+      free(new_data);
+      return (mem_handle){0};
+    }
   }
   return result;
 }
@@ -74,7 +79,10 @@ static void *memtbl_p(mem_handle handle) {
   if (!mem_is_valid(handle)) return (void *)0;
   memtbl *tblp = handle.allocator.allocator_data;
   if (!tblp || !mem_is_valid(tblp->mem_map_handle)) return (void *)0;
-  return mem_p(map_get_ptr(tblp->mem_map_handle, handle.data));
+  mem_handle result = map_get_ptr(tblp->mem_map_handle, handle.data);
+  // (Don't use mem_p here! result = handle if it's in the table, or is invalid
+  // if it's not.)
+  return result.data;
 }
 
 static const mem_allocator_spec MEMTBL_ALLOCATOR_SPEC =

@@ -198,6 +198,9 @@ static bool do_delete(map_handle mh, uint32_t key_hash) {
   (entries + pos)->value_handle = (mem_handle){0};
   --mp->entry_count;
 
+  // Shrink if entry count < 1/4th the table size. Note that this is not <=
+  // to leave a one-element threshold, so an add followed by a delete does not
+  // cause the table to grow then shrink immediately.
   if (mp->entry_count < (mp->table_size / 4) &&
       mp->table_size > INITIAL_TABLE_SIZE) {
     return resize_entries_table(mh, false);
@@ -213,7 +216,7 @@ bool map_set_str(map_handle mh, str key, mem_handle value) {
 
 bool map_set_ptr(map_handle mh, void *key, mem_handle value) {
   if (!map_is_valid(mh)) return false;
-  if (!mem_p(value)) return false;
+  if (!mem_is_valid(value)) return false;
   return do_set(mh, hash_ptr(key), value, false);
 }
 
