@@ -305,11 +305,10 @@ void test_StrSplitPop_ThreeDelim_PopsFourTimes(void) {
   }
 }
 
-void test_StrbufCreate_CreatesValid_DestroyMakesInvalid(void) {
+void test_StrbufCreate_CreatesValid_DestroyOk(void) {
   strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
   TEST_ASSERT_TRUE(strbuf_is_valid(bufhdl));
   strbuf_destroy(bufhdl);
-  TEST_ASSERT_FALSE(strbuf_is_valid(bufhdl));
 }
 
 void test_StrbufDuplicate_Valid_CreatesValid(void) {
@@ -319,7 +318,6 @@ void test_StrbufDuplicate_Valid_CreatesValid(void) {
   strbuf_destroy(bufhdl);
   TEST_ASSERT_TRUE(strbuf_is_valid(duphdl));
   strbuf_destroy(duphdl);
-  TEST_ASSERT_FALSE(strbuf_is_valid(duphdl));
 }
 
 void test_StrbufConcatenateCstr(void) {
@@ -386,9 +384,7 @@ void test_StrbufConcatenate_Overflow_Grows(void) {
 }
 
 void test_StrbufConcatenate_InvalidDestStrbuf_Fails(void) {
-  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
-  strbuf_destroy(bufhdl);
-  TEST_ASSERT_FALSE(strbuf_concatenate_cstr(bufhdl, "one"));
+  TEST_ASSERT_FALSE(strbuf_concatenate_cstr((strbuf_handle){0}, "one"));
 }
 
 void test_StrbufConcatenate_NullCstr_Fails(void) {
@@ -407,7 +403,7 @@ void test_StrbufConcatenate_InvalidInputStrbuf_Fails(void) {
 }
 
 void test_StrbufConcatenatePrintf_Succeeds(void) {
-  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 64);
+  strbuf_handle bufhdl = strbuf_create(MEM_ALLOCATOR_PLAIN, 16);
   TEST_ASSERT_TRUE(strbuf_concatenate_printf(bufhdl, "This is a test: %d (%s)",
                                              123, "message"));
   str result = strbuf_str(bufhdl);

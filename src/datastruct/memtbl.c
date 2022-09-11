@@ -25,7 +25,7 @@ void memtbl_destroy(memtbl_handle mthandle) {
   memtbl *mtp = mem_p(mthandle);
   map_iter it = map_first_value_iter(mtp->mem_map_handle);
   while (!map_iter_done(it)) {
-    mem_free(it.value_handle);
+    mem_free(map_iter_value(it));
     it = map_next_value_iter(it);
   }
   map_destroy(mtp->mem_map_handle);
@@ -80,8 +80,8 @@ static void *memtbl_p(mem_handle handle) {
   memtbl *tblp = handle.allocator.allocator_data;
   if (!tblp || !mem_is_valid(tblp->mem_map_handle)) return (void *)0;
   mem_handle result = map_get_ptr(tblp->mem_map_handle, handle.data);
-  // (Don't use mem_p here! result = handle if it's in the table, or is invalid
-  // if it's not.)
+  // Don't use mem_p here! result = handle if it's in the table, or is invalid
+  // if it's not.
   return result.data;
 }
 

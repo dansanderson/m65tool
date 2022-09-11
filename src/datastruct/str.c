@@ -38,7 +38,12 @@ str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
 }
 
 str str_duplicate_str(str strval) {
-  return mem_duplicate(strval);
+  if (!str_is_valid(strval)) return (str){0};
+  if (strval.allocator.allocator_spec->allocator_type ==
+      MEM_ALLOCATOR_TYPE_NOT_ALLOCATED) {
+    return str_duplicate_str_with_allocator(strval, MEM_ALLOCATOR_PLAIN);
+  }
+  return str_duplicate_str_with_allocator(strval, strval.allocator);
 }
 
 str str_duplicate_strbuf(strbuf_handle buf_handle) {
@@ -184,7 +189,8 @@ static bool do_strbuf_concatenate(strbuf_handle buf_handle, const char *cstr,
   while (destbufp->length + length > destbufp->data.size) {
     if (!grow_strbuf(buf_handle)) return false;
   }
-  memcpy((char *)mem_p(destbufp->data) + destbufp->length, cstr, length);
+  char *bufstart = mem_p(destbufp->data);
+  memcpy(bufstart + destbufp->length, cstr, length);
   destbufp->length += length;
   return true;
 }

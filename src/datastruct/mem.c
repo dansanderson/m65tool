@@ -24,7 +24,9 @@ static mem_handle plain_alloc(mem_allocator allocator, size_t size) {
 
 static mem_handle plain_realloc(mem_handle handle, size_t size) {
   if (!mem_is_valid(handle)) return (mem_handle){0};
-  return (mem_handle){.data = realloc(handle.data, size), .size = size};
+  return (mem_handle){.data = realloc(handle.data, size),
+                      .size = size,
+                      .allocator = handle.allocator};
 }
 
 static mem_handle plain_free(mem_handle handle) {

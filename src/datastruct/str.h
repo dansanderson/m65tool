@@ -67,6 +67,9 @@ str str_from_cstr(const char *cstr);
 /**
  * @brief Duplicates a str or strbuf into a new str, reusing the allocator.
  *
+ * If the str to duplicate is not allocated, this uses the plain allocator for
+ * the duplicate. To specify a different allocator, use `str_duplicate_with_allocator`.
+ *
  * @param v The str or strbuf
  * @return str The new allocated str
  */

@@ -16,6 +16,7 @@ struct map_entry {
 
 map_handle map_create(mem_allocator ma) {
   map_handle mh = mem_alloc(ma, sizeof(map));
+  if (!mem_is_valid(mh)) return (map_handle){0};
   map *mp = mem_p(mh);
   mp->entry_count = 0;
   mp->table_size = INITIAL_TABLE_SIZE;
