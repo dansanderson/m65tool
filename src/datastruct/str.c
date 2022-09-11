@@ -1,5 +1,6 @@
 #include "str.h"
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -122,6 +123,7 @@ int str_compare(str first, str second) {
 }
 
 str str_split_pop(str strval, str delim, str *part) {
+  if (!str_is_valid(strval) || !(str_is_valid(delim))) return (str){0};
   int pos = str_find(strval, delim);
   char *strval_p = mem_p(strval);
 
@@ -136,6 +138,37 @@ str str_split_pop(str strval, str delim, str *part) {
                  .size = strval.size - pos - delim.size,
                  .allocator = MEM_ALLOCATOR_NOT_ALLOCATED};
   }
+}
+
+str str_split_whitespace_pop(str strval, str *part) {
+  if (!str_is_valid(strval)) return (str){0};
+  char *strval_p = mem_p(strval);
+  int start = 0, pos = 0;
+
+  // Skip leading whitespace
+  if (isspace(*strval_p)) {
+    while (start < str_length(strval) && isspace(*(strval_p + start))) ++start;
+  }
+
+  // Find next space
+  pos = start;
+  while (pos < str_length(strval) && !isspace(*(strval_p + pos))) ++pos;
+
+  // Pop region from start to pos
+  part->data = strval_p + start;
+  part->allocator = MEM_ALLOCATOR_NOT_ALLOCATED;
+  part->size = pos - start;
+
+  // Locate end of next whitespace region
+  while (pos < str_length(strval) && isspace(*(strval_p + pos))) ++pos;
+
+  // If region is trailing whitespace, stop iteration
+  if (pos == strval.size) return (str){0};
+
+  // Otherwise, return from start of next non-space region to end
+  return (str){.data = strval_p + pos,
+               .size = strval.size - pos,
+               .allocator = MEM_ALLOCATOR_NOT_ALLOCATED};
 }
 
 strbuf_handle strbuf_create(mem_allocator allocator, size_t size) {

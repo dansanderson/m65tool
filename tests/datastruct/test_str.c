@@ -290,19 +290,64 @@ void test_StrSplitPop_DelimNotFound_PopsOnce(void) {
 }
 
 void test_StrSplitPop_ThreeDelim_PopsFourTimes(void) {
-  char *expected[4] = {"one", "two", "three", "four"};
+  char *expected[] = {"one", "two", "three", "four"};
+  int expected_count = 4;
   int expected_i = 0;
   str val = str_from_cstr("one,two,three,four");
   str delim = str_from_cstr(",");
   str part;
 
   while (str_is_valid(val)) {
-    TEST_ASSERT_TRUE(expected_i < 4);
+    TEST_ASSERT_TRUE(expected_i < expected_count);
     val = str_split_pop(val, delim, &part);
     TEST_ASSERT_EQUAL(0,
                       str_compare(str_from_cstr(expected[expected_i]), part));
     ++expected_i;
   }
+}
+
+void assert_whitespace_pop(char *cstr, char **expected, int expected_count) {
+  str val = str_from_cstr(cstr);
+  int expected_i = 0;
+  str part;
+  while (str_is_valid(val)) {
+    TEST_ASSERT_TRUE(expected_i < expected_count);
+    val = str_split_whitespace_pop(val, &part);
+    TEST_ASSERT_EQUAL(0,
+                      str_compare(str_from_cstr(expected[expected_i]), part));
+    ++expected_i;
+  }
+  TEST_ASSERT_EQUAL(expected_count, expected_i);
+}
+
+void test_StrSplitWhitespacePop_NoSpace_PopsOnce(void) {
+  assert_whitespace_pop("one", (char *[]){"one"}, 1);
+}
+
+void test_StrSplitWhitespacePop_OneSpaceInMiddle_PopsTwice(void) {
+  assert_whitespace_pop("one two", (char *[]){"one", "two"}, 2);
+}
+
+void test_StrSplitWhitespacePop_MultipleSpacesInMiddle_PopsTwice(void) {
+  assert_whitespace_pop("one \t \n two", (char *[]){"one", "two"}, 2);
+}
+
+void test_StrSplitWhitespacePop_MultipleSpacesAtBeginning_PopsOnce(void) {
+  assert_whitespace_pop(" \t \n one", (char *[]){"one"}, 1);
+}
+
+void test_StrSplitWhitespacePop_MultipleSpacesAtEnd_PopsOnce(void) {
+  assert_whitespace_pop("one \t \n ", (char *[]){"one"}, 1);
+}
+
+void test_StrSplitWhitespacePop_OnlySpace_PopsEmptyString(void) {
+  assert_whitespace_pop(" \t \n ", (char *[]){""}, 1);
+}
+
+void test_StrSplitWhitespacePop_LeadingInterTrailingSpace_ReturnsExpectedStrings(
+    void) {
+  assert_whitespace_pop("  one  \t\t \ntwo three\t\v \n ",
+                        (char *[]){"one", "two", "three"}, 3);
 }
 
 void test_StrbufCreate_CreatesValid_DestroyOk(void) {

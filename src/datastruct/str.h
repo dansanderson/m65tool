@@ -246,6 +246,24 @@ int str_compare(str first, str second);
 str str_split_pop(str strval, str delim, str *part);
 
 /**
+ * @brief Splits a str on whitespace and returns the next part.
+ *
+ * This is similar to `str_split_pop` except the delimiter is any contiguous
+ * region of whitespace characters. It uses the ctype.h `isspace` definition of
+ * whitespace.
+ *
+ * Unlike `str_split_pop`, leading and trailing whitespace is ignored. If the
+ * string is empty or contains only space, part is set to the empty string and
+ * an invalid string is returned, equivalent to popping one empty string.
+ *
+ * @param strval The str to split
+ * @param part The str up to the first whitespace character
+ * @return str The str that starts after the last contiguous whitespace
+ *   character in the first region to the end of strval
+ */
+str str_split_whitespace_pop(str strval, str *part);
+
+/**
  * @brief Creates a strbuf.
  *
  * Use `strbuf_is_valid` to confirm that memory was allocated correctly. strbuf
@@ -280,28 +298,40 @@ bool strbuf_is_valid(strbuf_handle buf_handle);
  */
 str strbuf_str(strbuf_handle buf_handle);
 
-// clang-format off
 /**
- * @brief Concatenates text to the end of the string buffer.
- *
- * The value can be a C string, a str, or another strbuf.
+ * @brief Concatenates text from a C string to the end of the string buffer.
  *
  * This may reallocate the buffer if the value outgrows its size. If the
  * reallocation fails, this returns an invalid strbuf.
  *
  * @param buf_handle Handle for the strbuf
- * @param v The C string (null-terminated char *), str, or strbuf_handle to concatenate
+ * @param cstr The null-terminated C string to concatenate
  * @return true on success
  */
-#define strbuf_concatenate(buf_handle, v) \
-  _Generic((v), \
-    char *: strbuf_concatenate_cstr, \
-    str: strbuf_concatenate_str, \
-    strbuf_handle: strbuf_concatenate_strbuf \
-    )((buf_handle), (v))
-// clang-format on
 bool strbuf_concatenate_cstr(strbuf_handle buf_handle, const char *cstr);
+
+/**
+ * @brief Concatenates text from a str to the end of the string buffer.
+ *
+ * This may reallocate the buffer if the value outgrows its size. If the
+ * reallocation fails, this returns an invalid strbuf.
+ *
+ * @param buf_handle Handle for the strbuf
+ * @param strval The str to concatenate
+ * @return true on success
+ */
 bool strbuf_concatenate_str(strbuf_handle buf_handle, str strval);
+
+/**
+ * @brief Concatenates text from another strbuf to the end of the string buffer.
+ *
+ * This may reallocate the buffer if the value outgrows its size. If the
+ * reallocation fails, this returns an invalid strbuf.
+ *
+ * @param buf_handle Handle for the strbuf
+ * @param sourcebuf_handle The strbuf_handle to concatenate
+ * @return true on success
+ */
 bool strbuf_concatenate_strbuf(strbuf_handle buf_handle,
                                strbuf_handle sourcebuf_handle);
 
