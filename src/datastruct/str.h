@@ -63,43 +63,54 @@ typedef struct strbuf {
  */
 str str_from_cstr(const char *cstr);
 
-// clang-format off
 /**
- * @brief Duplicates a str or strbuf into a new str, reusing the allocator.
+ * @brief Duplicates a str into a new str, reusing the allocator.
  *
  * If the str to duplicate is not allocated, this uses the plain allocator for
- * the duplicate. To specify a different allocator, use `str_duplicate_with_allocator`.
+ * the duplicate. To specify a different allocator, use
+ * `str_duplicate_with_allocator`.
  *
- * @param v The str or strbuf
+ * @param v The str
  * @return str The new allocated str
  */
-#define str_duplicate(v) \
-  _Generic((v), \
-    str: str_duplicate_str, \
-    strbuf_handle: str_duplicate_strbuf \
-  )((v), (void *)0)
-// clang-format on
 str str_duplicate_str(str strval);
+
+/**
+ * @brief Duplicates a strbuf into a new str, reusing the allocator.
+ *
+ * To specify a different allocator, use `str_duplicate_with_allocator`.
+ *
+ * @param v The strbuf
+ * @return str The new allocated str
+ */
 str str_duplicate_strbuf(strbuf_handle buf_handle);
 
-// clang-format off
 /**
- * @brief Duplicates a C string, str, or strbuf into a new str, with the given allocator.
+ * @brief Duplicates a C string into a new str, with the given allocator.
  *
- * @param v The str or strbuf
+ * @param v The C string
  * @param allocator The mem_allocator to use
  * @return str The new allocated str
  */
-#define str_duplicate_with_allocator(v, allocator) \
-  _Generic((v), \
-    char *: str_duplicate_cstr_with_allocator, \
-    str: str_duplicate_str_with_allocator, \
-    strbuf_handle: str_duplicate_strbuf_with_allocator \
-  )((v), (allocator))
-// clang-format on
 str str_duplicate_cstr_with_allocator(const char *cstr,
                                       mem_allocator allocator);
+
+/**
+ * @brief Duplicates a str into a new str, with the given allocator.
+ *
+ * @param v The str
+ * @param allocator The mem_allocator to use
+ * @return str The new allocated str
+ */
 str str_duplicate_str_with_allocator(str strval, mem_allocator allocator);
+
+/**
+ * @brief Duplicates a strbuf into a new str, with the given allocator.
+ *
+ * @param v The strbuf
+ * @param allocator The mem_allocator to use
+ * @return str The new allocated str
+ */
 str str_duplicate_strbuf_with_allocator(strbuf_handle buf_handle,
                                         mem_allocator allocator);
 

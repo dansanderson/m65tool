@@ -24,36 +24,36 @@ void tearDown(void) {
 }
 
 void test_MapGet_StrKey_FindsValue(void) {
-  TEST_ASSERT_TRUE(map_set_str(maph, strkey, val));
-  mem_handle result = map_get_str(maph, strkey);
+  TEST_ASSERT_TRUE(map_set(maph, strkey, val));
+  mem_handle result = map_get(maph, strkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
   TEST_ASSERT_EQUAL_PTR(mem_p(val), mem_p(result));
 }
 
 void test_MapGet_PtrKey_FindsValue(void) {
-  TEST_ASSERT_TRUE(map_set_ptr(maph, ptrkey, val));
-  mem_handle result = map_get_ptr(maph, ptrkey);
+  TEST_ASSERT_TRUE(map_set(maph, ptrkey, val));
+  mem_handle result = map_get(maph, ptrkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
   TEST_ASSERT_EQUAL_PTR(mem_p(val), mem_p(result));
 }
 
 void test_MapGet_UnsetStrKey_ReturnsInvalidHandle(void) {
-  mem_handle result = map_get_str(maph, strkey);
+  mem_handle result = map_get(maph, strkey);
   TEST_ASSERT_FALSE(mem_is_valid(result));
 }
 
 void test_MapGet_UnsetPtrKey_ReturnsInvalidHandle(void) {
-  mem_handle result = map_get_ptr(maph, ptrkey);
+  mem_handle result = map_get(maph, ptrkey);
   TEST_ASSERT_FALSE(mem_is_valid(result));
 }
 
 void test_MapSet_ExistingKey_ReplacesValue(void) {
-  TEST_ASSERT_TRUE(map_set_str(maph, strkey, val));
-  mem_handle result = map_get_str(maph, strkey);
+  TEST_ASSERT_TRUE(map_set(maph, strkey, val));
+  mem_handle result = map_get(maph, strkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
   TEST_ASSERT_EQUAL_PTR(mem_p(val), mem_p(result));
-  TEST_ASSERT_TRUE(map_set_str(maph, strkey, val2));
-  result = map_get_str(maph, strkey);
+  TEST_ASSERT_TRUE(map_set(maph, strkey, val2));
+  result = map_get(maph, strkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
   TEST_ASSERT_EQUAL_PTR(mem_p(val2), mem_p(result));
 }
@@ -66,7 +66,7 @@ void test_MapSet_17Keys_GrowsTable(void) {
   TEST_ASSERT_EQUAL(32, mapptr->table_size);
 
   for (int i = 0; i < 17; i++) {
-    TEST_ASSERT_TRUE(map_set_ptr(maph, locptr + i, val));
+    TEST_ASSERT_TRUE(map_set(maph, (void *)locptr + i, val));
   }
 
   TEST_ASSERT_EQUAL(17, mapptr->entry_count);
@@ -74,35 +74,35 @@ void test_MapSet_17Keys_GrowsTable(void) {
 }
 
 void test_MapDelete_ExistingStrKey_UnsetsKey(void) {
-  TEST_ASSERT_TRUE(map_set_str(maph, strkey, val));
-  mem_handle result = map_get_str(maph, strkey);
+  TEST_ASSERT_TRUE(map_set(maph, strkey, val));
+  mem_handle result = map_get(maph, strkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
 
   // Duplicate key to ensure it's using the string contents and not the address.
   str another_strkey =
       str_duplicate_cstr_with_allocator("key1", MEM_ALLOCATOR_PLAIN);
   TEST_ASSERT_TRUE(str_is_valid(another_strkey));
-  TEST_ASSERT_TRUE(map_delete_str(maph, another_strkey));
+  TEST_ASSERT_TRUE(map_delete(maph, another_strkey));
   str_destroy(another_strkey);
 
-  result = map_get_str(maph, strkey);
+  result = map_get(maph, strkey);
   TEST_ASSERT_FALSE(mem_is_valid(result));
 }
 
 void test_MapDelete_ExistingPtrKey_UnsetsKey(void) {
-  TEST_ASSERT_TRUE(map_set_ptr(maph, ptrkey, val));
-  mem_handle result = map_get_ptr(maph, ptrkey);
+  TEST_ASSERT_TRUE(map_set(maph, ptrkey, val));
+  mem_handle result = map_get(maph, ptrkey);
   TEST_ASSERT_TRUE(mem_is_valid(result));
 
-  TEST_ASSERT_TRUE(map_delete_ptr(maph, ptrkey));
+  TEST_ASSERT_TRUE(map_delete(maph, ptrkey));
 
-  result = map_get_ptr(maph, ptrkey);
+  result = map_get(maph, ptrkey);
   TEST_ASSERT_FALSE(mem_is_valid(result));
 }
 
 void test_MapDelete_UnsetStrKey_ReturnsFalse(void) {
-  TEST_ASSERT_FALSE(map_delete_ptr(maph, ptrkey));
-  TEST_ASSERT_FALSE(map_delete_str(maph, strkey));
+  TEST_ASSERT_FALSE(map_delete(maph, ptrkey));
+  TEST_ASSERT_FALSE(map_delete(maph, strkey));
 }
 
 void test_MapDelete_AfterGrowth_ShrinksTable(void) {
@@ -113,21 +113,21 @@ void test_MapDelete_AfterGrowth_ShrinksTable(void) {
   TEST_ASSERT_EQUAL(32, mapptr->table_size);
 
   for (int i = 0; i < 17; i++) {
-    TEST_ASSERT_TRUE(map_set_ptr(maph, locptr + i, val));
+    TEST_ASSERT_TRUE(map_set(maph, (void *)locptr + i, val));
   }
 
   TEST_ASSERT_EQUAL(17, mapptr->entry_count);
   TEST_ASSERT_EQUAL(64, mapptr->table_size);
 
-  TEST_ASSERT_TRUE(map_delete_ptr(maph, locptr));
-  TEST_ASSERT_TRUE(map_delete_ptr(maph, locptr + 1));
+  TEST_ASSERT_TRUE(map_delete(maph, (void *)locptr));
+  TEST_ASSERT_TRUE(map_delete(maph, (void *)locptr + 1));
   TEST_ASSERT_EQUAL(15, mapptr->entry_count);
   TEST_ASSERT_EQUAL(32, mapptr->table_size);
 }
 
 void test_MapIter_NonEmptyMap_ReturnsAllValues(void) {
-  TEST_ASSERT_TRUE(map_set_str(maph, strkey, val));
-  TEST_ASSERT_TRUE(map_set_str(maph, str_from_cstr("key2"), val2));
+  TEST_ASSERT_TRUE(map_set(maph, strkey, val));
+  TEST_ASSERT_TRUE(map_set(maph, str_from_cstr("key2"), val2));
   bool saw_val1 = false, saw_val2 = false;
   map_iter it = map_first_value_iter(maph);
   while (!map_iter_done(it)) {

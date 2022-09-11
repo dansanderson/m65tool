@@ -67,8 +67,6 @@ void map_destroy(map_handle mh);
  * @param value The mem_handle value
  * @return true on success
  */
-// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
-// the meantime.
 #define map_set(mh, key, value) \
   _Generic((key), \
     str: map_set_str, \
@@ -86,8 +84,6 @@ bool map_set_ptr(map_handle mh, void *key, mem_handle value);
  * @param key The key, either a str or a void*
  * @return mem_handle The value stored, or an invalid mem_handle if not found
  */
-// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
-// the meantime.
 #define map_get(mh, key) \
   _Generic((key), \
     str: map_get_str, \
@@ -108,8 +104,6 @@ mem_handle map_get_ptr(map_handle mh, void *key);
  * @param key The key, either a str or a void*
  * @return false if there was a memory error while shrinking the internal table
  */
-// TODO: Generic isn't working here, and I don't know why. Using typed funcs in
-// the meantime.
 #define map_delete(mh, key) \
   _Generic((key), \
     str: map_delete_str, \
