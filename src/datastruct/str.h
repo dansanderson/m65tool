@@ -299,10 +299,36 @@ bool strbuf_is_valid(strbuf_handle buf_handle);
 str strbuf_str(strbuf_handle buf_handle);
 
 /**
+ * @brief Resets the buffer to empty.
+ *
+ * This does not deallocate any memory. If the strbuf has grown in memory due
+ * to concatenate operations, it retains its size.
+ *
+ * Any str values derived via strbuf_str must be discarded. Subsequent
+ * operations will overwrite the data in the buffer.
+ *
+ * @param buf_handle
+ */
+void strbuf_reset(strbuf_handle buf_handle);
+
+/**
+ * @brief Concatenates a single character to the end of the string buffer.
+ *
+ * This may reallocate the buffer if the value outgrows its size. If the
+ * reallocation fails, this returns false.
+ *
+ * @param buf_handle
+ * @param c
+ * @return true
+ * @return false
+ */
+bool strbuf_concatenate_char(strbuf_handle buf_handle, const char c);
+
+/**
  * @brief Concatenates text from a C string to the end of the string buffer.
  *
  * This may reallocate the buffer if the value outgrows its size. If the
- * reallocation fails, this returns an invalid strbuf.
+ * reallocation fails, this returns false.
  *
  * @param buf_handle Handle for the strbuf
  * @param cstr The null-terminated C string to concatenate
@@ -314,7 +340,7 @@ bool strbuf_concatenate_cstr(strbuf_handle buf_handle, const char *cstr);
  * @brief Concatenates text from a str to the end of the string buffer.
  *
  * This may reallocate the buffer if the value outgrows its size. If the
- * reallocation fails, this returns an invalid strbuf.
+ * reallocation fails, this returns false.
  *
  * @param buf_handle Handle for the strbuf
  * @param strval The str to concatenate
@@ -323,10 +349,11 @@ bool strbuf_concatenate_cstr(strbuf_handle buf_handle, const char *cstr);
 bool strbuf_concatenate_str(strbuf_handle buf_handle, str strval);
 
 /**
- * @brief Concatenates text from another strbuf to the end of the string buffer.
+ * @brief Concatenates text from another strbuf to the end of the string
+ * buffer.
  *
  * This may reallocate the buffer if the value outgrows its size. If the
- * reallocation fails, this returns an invalid strbuf.
+ * reallocation fails, this returns false.
  *
  * @param buf_handle Handle for the strbuf
  * @param sourcebuf_handle The strbuf_handle to concatenate

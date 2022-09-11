@@ -207,6 +207,12 @@ str strbuf_str(strbuf_handle buf_handle) {
   return result;
 }
 
+void strbuf_reset(strbuf_handle buf_handle) {
+  if (!mem_is_valid(buf_handle)) return;
+  strbuf *bufp = mem_p(buf_handle);
+  bufp->length = 0;
+}
+
 static bool grow_strbuf(strbuf_handle buf_handle) {
   strbuf *bufp = mem_p(buf_handle);
   size_t newsize = bufp->data.size * 2;
@@ -226,6 +232,10 @@ static bool do_strbuf_concatenate(strbuf_handle buf_handle, const char *cstr,
   memcpy(bufstart + destbufp->length, cstr, length);
   destbufp->length += length;
   return true;
+}
+
+bool strbuf_concatenate_char(strbuf_handle buf_handle, const char c) {
+  return do_strbuf_concatenate(buf_handle, &c, 1);
 }
 
 bool strbuf_concatenate_cstr(strbuf_handle buf_handle, const char *cstr) {

@@ -199,6 +199,8 @@ bin_PROGRAMS += m65tool
 
 m65tool_SOURCES = ./src/m65tool/m65tool.c
 
+m65tool_LDADD = libdatastruct.la
+
 
 TESTS = $(check_PROGRAMS)
 
