@@ -90,8 +90,9 @@ int str_find(str strval, str substring) {
   char *strval_p = mem_p(strval);
   char *substring_p = mem_p(substring);
 
-  for (int start_i = 0; start_i < strval.size - substring.size + 1; start_i++) {
-    int offset = 0;
+  for (unsigned int start_i = 0; start_i < strval.size - substring.size + 1;
+       start_i++) {
+    size_t offset = 0;
     while (offset < substring.size &&
            strval_p[start_i + offset] == substring_p[offset])
       offset++;
@@ -109,7 +110,7 @@ int str_compare(str first, str second) {
   char *second_p = mem_p(second);
 
   unsigned int min_length = first.size < second.size ? first.size : second.size;
-  int i = 0;
+  unsigned int i = 0;
   while (i < min_length && first_p[i] == second_p[i]) i++;
   if (i == first.size) {
     if (first.size == second.size) return 0;
@@ -143,7 +144,7 @@ str str_split_pop(str strval, str delim, str *part) {
 str str_split_whitespace_pop(str strval, str *part) {
   if (!str_is_valid(strval)) return (str){0};
   char *strval_p = mem_p(strval);
-  int start = 0, pos = 0;
+  unsigned int start = 0, pos = 0;
 
   // Skip leading whitespace
   if (isspace(*strval_p)) {
