@@ -9,7 +9,7 @@
 
 #include "mem.h"
 
-static const size_t STR_CSTR_BUFSIZE = 1024;
+#define STR_CSTR_BUFSIZE 1024
 static char STR_CSTR_BUFFER[STR_CSTR_BUFSIZE];
 
 str str_from_cstr(const char *cstr) {
