@@ -30,7 +30,7 @@ void test_MemAlloc_MemtblAllocator_AllocatesMemory(void) {
 void test_MemAlloc_MemtblAllocator_RestoresSigintHandler(void) {
   signal(SIGINT, dummy_sigint);
   mem_handle result = mem_alloc(ma, sizeof(int));
-  result = mem_free(result);
+  /* result = */ mem_free(result);
   void (*prev_handler)(int) = signal(SIGINT, SIG_DFL);
   TEST_ASSERT_EQUAL_PTR(dummy_sigint, prev_handler);
 }
@@ -61,7 +61,7 @@ void test_MemRealloc_MemtblAllocator_RestoresSigintHandler(void) {
   signal(SIGINT, dummy_sigint);
   mem_handle result = mem_alloc(ma, sizeof(int));
   result = mem_realloc(result, sizeof(char));
-  result = mem_free(result);
+  /* result = */ mem_free(result);
   void (*prev_handler)(int) = signal(SIGINT, SIG_DFL);
   TEST_ASSERT_EQUAL_PTR(dummy_sigint, prev_handler);
 }

@@ -15,6 +15,9 @@ make
 make check
 make check TESTS='tests/runners/runner_test_scoreboard'
 
+./configure --enable-coverage
+make check-code-coverage
+
 make distcheck
 
 make clean

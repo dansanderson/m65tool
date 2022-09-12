@@ -16,3 +16,7 @@
 # BUILT_SOURCES +=
 # TESTS +=
 # EXTRA_DIST +=
+
+clean-local: code-coverage-clean
+distclean-local: code-coverage-dist-clean
+

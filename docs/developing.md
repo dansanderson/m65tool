@@ -34,13 +34,14 @@ Make sure you have the following support tools installed:
 - [Ruby](https://www.ruby-lang.org/en/) 2.x or later, for unit test code
   generation
 - [Python](https://www.python.org/) 3.x for the module management tools
+- [lcov](http://ltp.sourceforge.net/coverage/lcov.php) for code coverage
 
 On Linux, you can install these prerequisites with your system's package
 manager. For example, on Ubuntu:
 
 ```text
 sudo apt-get update
-sudo apt-get install build-essential autotools-dev autoconf ruby-full git clang-format python3.10
+sudo apt-get install build-essential autotools-dev autoconf ruby-full git clang-format python3.10 lcov
 ```
 
 On macOS, install [Homebrew](https://brew.sh/). Simply installing Homebrew also
@@ -48,7 +49,7 @@ installs the XCode Command Line Tools, including a gcc-compatible C compiler
 and GNU Autotools. You can install additional tools like so:
 
 ```text
-brew install ruby python git clang-format
+brew install ruby python git clang-format lcov
 ```
 
 On Windows, install [MinGW MSYS2](https://www.msys2.org/#installation). The
@@ -56,7 +57,7 @@ instructions describe how to open an MSYS terminal and run the `pacman` package
 manager. You can use `pacman` to install the MinGW toolchain and other tools:
 
 ```text
-pacman -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb clang autotools git
+pacman -S base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libusb clang autotools git lcov
 ```
 
 **Note:** Take care to build in a MinGW shell, and not an "MSYS" shell. From the MSYS

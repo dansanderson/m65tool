@@ -24,6 +24,11 @@ libtool
 /tests/test_*.log
 /tests/test_*.trs
 test-suite.log
+/*-coverage
+/*-coverage.info
+aminclude_static.am
+*.gcda
+*.gcno
 
 # Python
 .mypy_cache

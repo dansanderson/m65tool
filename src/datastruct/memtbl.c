@@ -55,6 +55,8 @@ static mem_handle memtbl_realloc(mem_handle handle, size_t size) {
   if (!new_data) return (mem_handle){0};
   mem_handle result = {
       .allocator = handle.allocator, .data = new_data, .size = size};
+  // (old_data may be free'd by realloc but we only use it as a hash key here.
+  // Static analyzers will complain.)
   if (new_data != old_data) {
     if (!map_set(tblp->mem_map_handle, new_data, result) ||
         !map_delete(tblp->mem_map_handle, old_data)) {
@@ -70,8 +72,8 @@ static mem_handle memtbl_free(mem_handle handle) {
   memtbl *tblp = handle.allocator.allocator_data;
   if (!tblp || !mem_is_valid(tblp->mem_map_handle)) return (mem_handle){0};
   void *data = mem_p(handle);
-  free(data);
   map_delete(tblp->mem_map_handle, data);
+  free(data);
   return (mem_handle){0};
 }
 

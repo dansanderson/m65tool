@@ -219,6 +219,20 @@ To run its binary:
 ./tests/runners/test_examplemod
 ```
 
+## Code coverage
+
+This project is set up to use
+[lcov](http://ltp.sourceforge.net/coverage/lcov.php) for code coverage. With
+`lcov` installed:
+
+```text
+./configure --enable-coverage
+make check-code-coverage
+```
+
+This runs all tests and prints a brief summary of code coverage. It also
+generates `./m65tool-0.1-coverage/index.html`, which you can open in a browser.
+
 ## Custom Makefile.am rules
 
 A module source directory can have an optional `module.mk` file containing
