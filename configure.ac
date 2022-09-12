@@ -1,3 +1,4 @@
+m4_include([m4/libuv-check-flags.m4])
 AC_INIT([m65tool], [0.1])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability subdir-objects])
 
@@ -27,6 +28,10 @@ AM_CONDITIONAL([BUILD_WINDOWS], [test "$build_windows" = "yes"])
 AM_CONDITIONAL([BUILD_APPLE], [test "$build_apple" = "yes"])
 
 AC_PROG_CC
+CC_CHECK_CFLAGS_APPEND([-std=c17])
+CC_CHECK_CFLAGS_APPEND([-Wall])
+CC_CHECK_CFLAGS_APPEND([-Wextra])
+
 AM_PROG_AR
 AC_PATH_PROG([RUBY], [ruby])
 LT_INIT
@@ -35,8 +40,6 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 AC_PATH_PROG([CLANG_FORMAT], [clang-format])
 
 AX_CODE_COVERAGE
-
-CFLAGS="$CFLAGS -std=c17"
 
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_HEADERS([config.h])
